@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 export default function HomePage() {
   const [data, setData] = useState<any>(null);
@@ -13,12 +14,12 @@ export default function HomePage() {
   return (
     <main style={{ padding: '2rem' }}>
       <h1>Next.js + Elysia (Single Port)</h1>
-      <button 
+      <Button
         onClick={fetchElysia}
         style={{ padding: '10px 20px', cursor: 'pointer' }}
       >
         Test Elysia API
-      </button>
+      </Button>
 
       {data && (
         <pre style={{ marginTop: '20px', background: '#222', color: '#fff', padding: '15px' }}>
