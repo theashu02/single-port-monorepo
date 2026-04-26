@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import StoreProvider from "@/lib/redux/StoreProvider";
+import { Geist } from "next/font/google";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Mono repo",
@@ -14,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased")}>
+    <html lang="en" className={cn(geist.className, "h-full", "antialiased")}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <StoreProvider>{children}</StoreProvider>
       </body>
