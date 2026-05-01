@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import StoreProvider from "@/lib/redux/StoreProvider";
+import AuthProvider from "@/components/auth/AuthProvider";
 import { Geist } from "next/font/google";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
@@ -19,7 +20,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn(geist.className, "h-full", "antialiased")}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <StoreProvider>{children}</StoreProvider>
+        <AuthProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );
