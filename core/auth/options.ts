@@ -3,9 +3,9 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { verifyMessage } from "ethers";
-import { connectToDatabase } from "@/lib/db/mongoose";
-import { UserModel } from "@/lib/models/user";
-import { consumeNonce } from "@/lib/auth/nonceStore";
+import { connectToDatabase } from "@/core/db/mongoose";
+import { UserModel } from "@/core/models/user";
+import { consumeNonce } from "@/core/auth/nonceStore";
 
 const getEnv = (key: string) => {
   const v = process.env[key];
@@ -18,8 +18,8 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60,     // 1 day
-    updateAge: 6 * 60 * 60,   // refresh token every 6 hours
+    maxAge: 24 * 60 * 60, // 1 day
+    updateAge: 6 * 60 * 60, // refresh token every 6 hours
   },
 
   pages: {
@@ -37,9 +37,9 @@ export const authOptions: NextAuthOptions = {
       id: "email-password",
       name: "Email & Password",
       credentials: {
-        email:    { label: "Email",    type: "email" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
-        name:     { label: "Name",     type: "text" },   // only used during registration
+        name: { label: "Name", type: "text" }, // only used during registration
         isRegister: { label: "Is Register", type: "text" },
       },
       async authorize(credentials) {
@@ -90,9 +90,9 @@ export const authOptions: NextAuthOptions = {
       id: "metamask",
       name: "MetaMask",
       credentials: {
-        address:   { label: "Address",   type: "text" },
+        address: { label: "Address", type: "text" },
         signature: { label: "Signature", type: "text" },
-        nonce:     { label: "Nonce",     type: "text" },
+        nonce: { label: "Nonce", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.address || !credentials?.signature || !credentials?.nonce) return null;
@@ -110,10 +110,7 @@ export const authOptions: NextAuthOptions = {
           const walletEmail = `${credentials.address.toLowerCase()}@wallet.local`;
 
           let user = await UserModel.findOne({
-            $or: [
-              { walletAddress: credentials.address.toLowerCase() },
-              { email: walletEmail },
-            ],
+            $or: [{ walletAddress: credentials.address.toLowerCase() }, { email: walletEmail }],
           });
 
           if (!user) {
@@ -146,7 +143,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "email-password" || account?.provider === "metamask") {
-        return true; 
+        return true;
       }
 
       if (!user.email) return false;
@@ -162,7 +159,7 @@ export const authOptions: NextAuthOptions = {
             image: user.image,
             provider: "google",
             providerAccountId: account?.providerAccountId,
-            emailVerified: true, 
+            emailVerified: true,
             lastLoginAt: new Date(),
             loginCount: 1,
           });
