@@ -4,6 +4,7 @@ import { MetaMaskButton } from "@/components/auth/MetaMaskButton";
 import { EmailAuthForm } from "@/components/auth/EmailAuthForm";
 import Image from "next/image";
 import { getServerAuthSession } from "@/core/auth/session";
+import { GuestLoginButton } from "@/components/auth/GuestLoginButton";
 
 export default async function AuthPage() {
   const session = await getServerAuthSession();
@@ -29,6 +30,7 @@ export default async function AuthPage() {
           <div className="space-y-4">
             <GoogleButton />
             <MetaMaskButton />
+            <GuestLoginButton />
           </div>
 
           <div className="relative my-8">
