@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import StoreProvider from "@/lib/redux/StoreProvider";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { Geist } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en" className={cn(geist.className, "h-full", "antialiased")}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AuthProvider>
+          <Toaster position="top-center" toastOptions={{ unstyled: true }} />
           <StoreProvider>{children}</StoreProvider>
         </AuthProvider>
       </body>

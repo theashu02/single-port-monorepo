@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AVATAR_SEEDS, AvatarURL, GENDER_OPTIONS, generateNickname, GuestSessionData, INTEREST_OPTIONS, transition, variants } from "@/core/constants/guest_constant";
 import { createGuestSession, refreshGuestSession } from "@/core/apis/Guest_API";
+import { customToast } from "@/components/ui/toast";
 
 export default function GuestLoginPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function GuestLoginPage() {
       try {
         const data = await refreshGuestSession(guestData.guest_id, guestData.session_token);
         localStorage.setItem("guest_session", JSON.stringify(data));
+        customToast("Welcome back!", "success", "Your session has been restored.");
         router.push("/dashboard");
       } catch {
         setStep(1);
@@ -91,6 +93,7 @@ export default function GuestLoginPage() {
       const data = await createGuestSession(payload);
 
       localStorage.setItem("guest_session", JSON.stringify(data));
+      customToast("Welcome aboard!", "success", "Your guest session is ready.");
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -153,7 +156,7 @@ export default function GuestLoginPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-start sm:items-center justify-center px-4 sm:px-6 pb-10">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-10">
         <div className="w-full max-w-md">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div key={step} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={transition} className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl p-6 sm:p-8 shadow-(--shadow-soft)">

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { logoutGuestSession } from "@/core/apis/General_API";
+import { customToast } from "@/components/ui/toast";
 
 export default function DashboardPage() {
   const reduxMessage = useAppSelector((state) => state.test.message);
@@ -51,6 +52,10 @@ export default function DashboardPage() {
     }
   };
 
+  const handleclick = () => {
+    customToast("Welcome back!", "info", "Your session has been restored.");
+  }
+
   return (
     <div style={{ padding: "2rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -71,6 +76,7 @@ export default function DashboardPage() {
       <div style={{ marginTop: "20px", padding: "15px", background: "#f0f0f0", borderRadius: "8px", color: "#000" }}>
         <p>This data is retrieved from the Redux Store:</p>
         <h2 style={{ color: "#0070f3" }}>{reduxMessage}</h2>
+        <Button onClick={handleclick}>Click me!</Button>
       </div>
 
       <div style={{ marginTop: "20px" }}>
