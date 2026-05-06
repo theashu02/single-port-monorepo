@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { logoutGuestSession } from "@/core/apis/General_API";
 import { fetchGuestSession } from "@/core/apis/Guest_API";
 import { customToast } from "@/components/ui/toast";
+import HoverButton from "@/components/ui/HoverButton";
+import { ArrowUpRight } from "lucide-react";
 
 const GUEST_MARKER_KEY = "guest_session_present";
 
@@ -69,7 +71,7 @@ export default function DashboardPage() {
 
   const handleclick = () => {
     customToast("Welcome back!", "info", "Your session has been restored.");
-  }
+  };
 
   return (
     <div style={{ padding: "2rem" }}>
@@ -91,7 +93,13 @@ export default function DashboardPage() {
       <div style={{ marginTop: "20px", padding: "15px", background: "#f0f0f0", borderRadius: "8px", color: "#000" }}>
         <p>This data is retrieved from the Redux Store:</p>
         <h2 style={{ color: "#0070f3" }}>{reduxMessage}</h2>
-        <Button onClick={handleclick}>Click me!</Button>
+        {/* <Button onClick={handleclick}>Click me!</Button> */}
+        <HoverButton onClick={handleclick} className="w-52">
+          <>
+            <span className="">Securely Logout</span>
+            <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </>
+        </HoverButton>
       </div>
 
       <div style={{ marginTop: "20px" }}>
