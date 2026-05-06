@@ -12,6 +12,8 @@ import { AVATAR_SEEDS, AvatarURL, GENDER_OPTIONS, generateNickname, GuestSession
 import { createGuestSession, refreshGuestSession } from "@/core/apis/Guest_API";
 import { customToast } from "@/components/ui/toast";
 
+const GUEST_MARKER_KEY = "guest_session_present";
+
 export default function GuestLoginPage() {
   const router = useRouter();
 
@@ -27,13 +29,14 @@ export default function GuestLoginPage() {
   const [error, setError] = useState("");
 
   const handleAutoLogin = useCallback(
-    async (guestData: GuestSessionData) => {
+    async (guestData?: GuestSessionData) => {
       try {
-        const data = await refreshGuestSession(guestData.guest_id, guestData.session_token);
-        localStorage.setItem("guest_session", JSON.stringify(data));
+        await refreshGuestSession(guestData?.guest_id);
+        localStorage.setItem(GUEST_MARKER_KEY, "1");
         customToast("Welcome back!", "success", "Your session has been restored.");
         router.push("/dashboard");
       } catch {
+        localStorage.removeItem(GUEST_MARKER_KEY);
         setStep(1);
       }
     },
@@ -41,18 +44,9 @@ export default function GuestLoginPage() {
   );
 
   useEffect(() => {
-    const guestDataStr = localStorage.getItem("guest_session");
-    if (guestDataStr) {
-      try {
-        const guestData = JSON.parse(guestDataStr);
-        if (guestData.guest_id && guestData.session_token) {
-          // Defer execution to avoid synchronous cascading render
-          setTimeout(() => handleAutoLogin(guestData), 0);
-          return;
-        }
-      } catch {
-        // Handle potential parsing errors silently
-      }
+    const hasGuestMarker = localStorage.getItem(GUEST_MARKER_KEY) === "1";
+    if (hasGuestMarker) {
+      setTimeout(() => handleAutoLogin(), 0);
     }
 
     const t = setTimeout(() => setStep(1), 900);
@@ -90,9 +84,8 @@ export default function GuestLoginPage() {
         terms_accepted: termsAccepted,
       };
 
-      const data = await createGuestSession(payload);
-
-      localStorage.setItem("guest_session", JSON.stringify(data));
+      await createGuestSession(payload);
+      localStorage.setItem(GUEST_MARKER_KEY, "1");
       customToast("Welcome aboard!", "success", "Your guest session is ready.");
       router.push("/dashboard");
     } catch (err: unknown) {
@@ -182,7 +175,7 @@ export default function GuestLoginPage() {
                           className={`relative aspect-square flex items-center justify-center transition-all rounded-2xl cursor-pointer z-10 ${selected ? "bg-primary/20 shadow-(--shadow-glow) border-2 border-primary" : "bg-muted hover:bg-muted/70"}`}
                         >
                           <div className="relative w-full h-full scale-110">
-                            <Image src={`${AvatarURL}=${seed}`} alt={seed} fill className="object-cover rounded-2xl" />
+                            <Image src={`${AvatarURL}=${seed}`} alt={seed} fill sizes="(max-width: 640px) 22vw, 96px" className="object-cover rounded-2xl" />
                           </div>
 
                           {selected && (
@@ -201,7 +194,7 @@ export default function GuestLoginPage() {
                 <div className="space-y-6">
                   <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="w-24 h-24 mx-auto rounded-3xl bg-primary/20 shadow-(--shadow-glow) border-2 border-primary overflow-hidden flex items-center justify-center">
                     <div className="relative w-full h-full scale-110">
-                      <Image src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${AVATAR_SEEDS[avatarIdx]}`} alt="Avatar" fill className="object-cover" />
+                      <Image src={`${AvatarURL}=${AVATAR_SEEDS[avatarIdx]}`} alt="Avatar" fill sizes="96px" className="object-cover" />
                     </div>
                   </motion.div>
                   <div className="text-center space-y-2">

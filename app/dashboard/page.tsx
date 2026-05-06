@@ -1,44 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useAppSelector } from "@/lib/redux/hooks";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { logoutGuestSession } from "@/core/apis/General_API";
+import { fetchGuestSession } from "@/core/apis/Guest_API";
 import { customToast } from "@/components/ui/toast";
+
+const GUEST_MARKER_KEY = "guest_session_present";
 
 export default function DashboardPage() {
   const reduxMessage = useAppSelector((state) => state.test.message);
-  const { data: session } = useSession();
-  const [guestUser] = useState<{
+  const { data: session, status } = useSession();
+  const [guestUser, setGuestUser] = useState<{
     name: string;
     email: string;
     id: string;
-  } | null>(() => {
-    if (typeof window === "undefined") return null;
-    const guestStr = localStorage.getItem("guest_session");
-    if (!guestStr) return null;
-    try {
-      const guestData = JSON.parse(guestStr);
-      if (guestData.is_guest) {
-        return {
-          name: guestData.nickname,
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (status === "loading") return;
+    if (session?.user) return;
+
+    const hasGuestMarker = localStorage.getItem(GUEST_MARKER_KEY) === "1";
+    if (!hasGuestMarker) return;
+
+    fetchGuestSession()
+      .then((guestData) => {
+        if (!active || !guestData?.is_guest) return;
+        localStorage.setItem(GUEST_MARKER_KEY, "1");
+        setGuestUser({
+          name: guestData.nickname ?? "Guest",
           email: "Anonymous Guest",
           id: guestData.guest_id,
-        };
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  });
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        localStorage.removeItem(GUEST_MARKER_KEY);
+        setGuestUser(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user, status]);
 
   const activeUser = session?.user || guestUser;
 
   const handleLogout = async () => {
-    localStorage.removeItem("guest_session");
+    localStorage.removeItem(GUEST_MARKER_KEY);
     try {
       await logoutGuestSession();
     } catch {

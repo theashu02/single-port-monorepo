@@ -19,8 +19,12 @@ export const transition = { type: "spring" as const, stiffness: 260, damping: 28
 
 export interface GuestSessionData {
   guest_id: string;
-  session_token: string;
   nickname?: string;
+  avatar_id?: string;
+  gender?: string | null;
+  interests?: string[];
+  created_at?: string;
+  expires_at?: string;
   is_guest?: boolean;
 }
 

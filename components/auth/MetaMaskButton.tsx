@@ -24,7 +24,13 @@ export function MetaMaskButton() {
       const address: string = accounts[0];
 
       const res = await fetch(`/api/nonce?address=${address}`);
+      if (!res.ok) {
+        throw new Error("Unable to get sign-in nonce");
+      }
       const { nonce } = await res.json();
+      if (!nonce) {
+        throw new Error("Nonce not received");
+      }
 
       const message = `Sign in to [YourApp]\nAddress: ${address}\nNonce: ${nonce}`;
 

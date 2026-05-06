@@ -6,8 +6,8 @@ export default withAuth({
   },
   callbacks: {
     authorized: ({ req, token }) => {
-      // Check for our custom guest session cookie
-      const isGuest = req.cookies.has("guest_session_token");
+      // Optimistic guest check; secure validation still happens in server/session layer.
+      const isGuest = req.cookies.has("guest_session_token") && req.cookies.has("guest_id");
       return !!token || isGuest;
     },
   },
