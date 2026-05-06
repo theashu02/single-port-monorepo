@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { Bell, CheckCheck, Sparkles, Heart, UserPlus, MessageCircle, Trash2, LucideIcon } from "lucide-react";
 
 // --- Types ---
@@ -61,13 +62,13 @@ const NotificationItem: React.FC<{ notification: NotificationData }> = ({ notifi
       {notification.isUnread && <span className="absolute left-1 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-violet-400"></span>}
 
       {/* Type Icon */}
-      <div className={`relative shrink-0 grid place-items-center h-11 w-11 rounded-xl bg-gradient-to-br ${config.gradient}`}>
+      <div className={`relative shrink-0 grid place-items-center h-11 w-11 rounded-xl bg-linear-to-br ${config.gradient}`}>
         <Icon className="h-4 w-4 text-white" aria-hidden="true" />
       </div>
 
       {/* Avatar */}
       <span className="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 ring-2 ring-white/10">
-        <img className="aspect-square h-full w-full object-cover" src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${notification.seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`} alt={`${notification.username}'s avatar`} />
+        <Image className="aspect-square h-full w-full object-cover" src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${notification.seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`} alt={`${notification.username}'s avatar`} fill />
       </span>
 
       {/* Content */}
@@ -82,7 +83,7 @@ const NotificationItem: React.FC<{ notification: NotificationData }> = ({ notifi
 
       {/* Hover Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:bg-primary/90 h-8 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 text-xs px-3">View</button>
+        <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:bg-primary/90 h-8 rounded-full bg-linear-to-r from-violet-500 to-cyan-400 text-xs px-3">View</button>
         <button className="grid place-items-center h-8 w-8 rounded-full bg-white/5 hover:bg-rose-500/20 text-white/50 hover:text-rose-300 transition" aria-label="Delete notification">
           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
@@ -100,7 +101,7 @@ export const Notifications: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="relative grid place-items-center h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400">
+          <div className="relative grid place-items-center h-12 w-12 rounded-2xl bg-linear-to-br from-violet-500 to-cyan-400">
             <Bell className="h-5 w-5 text-white" aria-hidden="true" />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 grid place-items-center rounded-full bg-rose-500 text-[10px] font-bold ring-2 ring-[#0c0a18]">{unreadCount}</span>}
           </div>

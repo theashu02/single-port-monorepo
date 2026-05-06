@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { Search, Filter, MessageCircle, UserPlus } from "lucide-react";
 
 // --- Types ---
@@ -47,14 +48,14 @@ const UserCard: React.FC<{ user: User }> = ({ user }) => {
   return (
     <div className="glass border border-white/10 rounded-2xl p-4 relative group overflow-hidden">
       {/* Hover Glow Effect */}
-      <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/30 to-cyan-400/20 opacity-0 group-hover:opacity-100 blur-2xl transition"></div>
+      <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-linear-to-br from-violet-500/30 to-cyan-400/20 opacity-0 group-hover:opacity-100 blur-2xl transition"></div>
 
       <div className="relative flex flex-col items-center text-center">
         {/* Avatar */}
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 blur-md opacity-50 group-hover:opacity-80 transition"></div>
+          <div className="absolute inset-0 rounded-full bg-linear-to-br from-violet-500 to-cyan-400 blur-md opacity-50 group-hover:opacity-80 transition"></div>
           <span className="flex shrink-0 overflow-hidden rounded-full relative h-20 w-20 ring-2 ring-white/20">
-            <img className="aspect-square h-full w-full object-cover" src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${user.seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`} alt={`${user.username}'s avatar`} />
+            <Image className="aspect-square h-full w-full object-cover" src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${user.seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`} alt={`${user.username}'s avatar`} fill />
           </span>
           {/* Online Indicator */}
           <span className="pulse-ring absolute -bottom-0.5 right-1 h-4 w-4 rounded-full bg-emerald-400 ring-2 ring-[#0c0a18]"></span>

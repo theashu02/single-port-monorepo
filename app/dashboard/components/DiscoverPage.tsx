@@ -1,4 +1,6 @@
 import React from 'react'
+import Image from "next/image";
+import { Flame, Send, Smile, Sparkles } from 'lucide-react';
 
 export default function DiscoverPage() {
   return (
@@ -18,14 +20,14 @@ export default function DiscoverPage() {
                 <span className="text-[11px] font-bold tracking-widest uppercase text-rose-200">Live Match</span>
               </div>
               <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-flame h-3.5 w-3.5 text-orange-400" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+                <Flame className="h-4 w-4" />
                 <span className="text-xs font-semibold text-white/80">98% match</span>
               </div>
               
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 blur-2xl opacity-60"></div>
+                <div className="absolute inset-0 rounded-full bg-linear-to-br from-violet-500 via-fuchsia-500 to-cyan-400 blur-2xl opacity-60"></div>
                 <span className="flex shrink-0 overflow-hidden rounded-full relative h-36 w-36 ring-4 ring-white/20 shadow-2xl">
-                  <img className="aspect-square h-full w-full" src="https://api.dicebear.com/7.x/adventurer/svg?seed=pixel_dreamer&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="Avatar" />
+                  <Image className="aspect-square h-full w-full object-cover" src="https://api.dicebear.com/7.x/adventurer/svg?seed=pixel_dreamer&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="Avatar" fill />
                 </span>
                 <span className="pulse-ring absolute bottom-2 right-2 h-5 w-5 rounded-full bg-emerald-400 ring-4 ring-[#0c0a18]"></span>
               </div>
@@ -47,7 +49,7 @@ export default function DiscoverPage() {
                 <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/15 text-white" tabIndex={0}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video h-5 w-5" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect></svg>
                 </button>
-                <button className="h-14 px-7 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white font-bold text-sm tracking-wide shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition flex items-center gap-2" tabIndex={0} style={{ transform: 'none' }}>
+                <button className="h-14 px-7 rounded-full bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white font-bold text-sm tracking-wide shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition flex items-center gap-2" tabIndex={0} style={{ transform: 'none' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shuffle h-4 w-4" aria-hidden="true"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg> Next Vibe
                 </button>
                 <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/5 text-white/70 hover:bg-rose-500/20 hover:text-rose-300" tabIndex={0} style={{ transform: 'none' }}>
@@ -64,7 +66,7 @@ export default function DiscoverPage() {
           <div className="rounded-3xl glass border border-white/10 overflow-hidden flex flex-col h-[280px]">
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
               <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles h-4 w-4 text-violet-300" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
+               <Sparkles className='h-4 w-4'/>
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Live Chat</span>
               </div>
               <span className="text-[10px] text-white/40">end-to-end • anonymous</span>
@@ -75,7 +77,7 @@ export default function DiscoverPage() {
                 <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-white/8 text-white/90 rounded-bl-sm border border-white/5">yo new here? 👀</div>
               </div>
               <div className="flex justify-end" style={{ opacity: 1, transform: 'none' }}>
-                <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-br-sm">haha yeah just vibing</div>
+                <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-linear-to-r from-violet-500 to-fuchsia-500 text-white rounded-br-sm">haha yeah just vibing</div>
               </div>
               <div className="flex justify-start" style={{ opacity: 1, transform: 'none' }}>
                 <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-white/8 text-white/90 rounded-bl-sm border border-white/5">based. what music u into?</div>
@@ -84,11 +86,11 @@ export default function DiscoverPage() {
             
             <div className="p-3 border-t border-white/5 flex items-center gap-2">
               <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-smile h-4 w-4" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y2="9.01" y1="9" y2="9"></line><line x1="15" x2="15.01" y1="9" y2="9"></line></svg>
+                <Smile className="h-24 w-24" />
               </button>
               <input className="flex w-full border px-3 py-1 shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm flex-1 h-10 bg-white/5 border-white/10 rounded-full text-sm placeholder:text-white/30 focus-visible:ring-violet-500/50" placeholder="Drop a vibe..." defaultValue="" />
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 py-2 h-10 px-4 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold text-sm hover:opacity-90">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-send h-4 w-4 mr-1" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg> Send
+              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 py-2 h-10 px-4 rounded-full bg-linear-to-r from-violet-500 to-cyan-400 text-white font-semibold text-sm hover:opacity-90">
+                <Send className="h-24 w-24"/> Send
               </button>
             </div>
           </div>

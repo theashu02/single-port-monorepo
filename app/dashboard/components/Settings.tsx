@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from "next/image";
 import { Settings as SettingsIcon, User, Sparkles, Lock, Bell, Palette, Camera, Save } from "lucide-react";
 
 // --- Types ---
@@ -26,7 +27,7 @@ export const Settings: React.FC = () => {
     <div className="flex flex-col w-full h-full p-4 lg:p-6 gap-4 min-w-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="grid place-items-center h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400">
+        <div className="grid place-items-center h-12 w-12 rounded-2xl bg-linear-to-br from-violet-500 to-cyan-400">
           <SettingsIcon className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
         <div>
@@ -44,7 +45,7 @@ export const Settings: React.FC = () => {
             const isActive = activeTab === item.id;
 
             return (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-3 h-11 rounded-xl text-sm font-medium transition ${isActive ? "bg-gradient-to-r from-violet-500/20 to-cyan-400/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
+              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-3 h-11 rounded-xl text-sm font-medium transition ${isActive ? "bg-linear-to-r from-violet-500/20 to-cyan-400/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 {item.label}
               </button>
@@ -67,9 +68,9 @@ export const Settings: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <span className="relative flex shrink-0 overflow-hidden rounded-full h-20 w-20 ring-2 ring-violet-400/40">
-                      <img className="aspect-square h-full w-full object-cover" src="https://api.dicebear.com/7.x/adventurer/svg?seed=you-vibez&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="Your Avatar" />
+                      <Image className="aspect-square h-full w-full object-cover" src="https://api.dicebear.com/7.x/adventurer/svg?seed=you-vibez&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="Your Avatar" fill />
                     </span>
-                    <button className="absolute -bottom-1 -right-1 grid place-items-center h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 ring-2 ring-[#0c0a18]" aria-label="Upload new avatar">
+                    <button className="absolute -bottom-1 -right-1 grid place-items-center h-8 w-8 rounded-full bg-linear-to-br from-violet-500 to-cyan-400 ring-2 ring-[#0c0a18]" aria-label="Upload new avatar">
                       <Camera className="h-3.5 w-3.5 text-white" aria-hidden="true" />
                     </button>
                   </div>
@@ -108,7 +109,7 @@ export const Settings: React.FC = () => {
 
                 {/* Actions */}
                 <div className="pt-3 flex gap-2">
-                  <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow hover:bg-primary/90 px-4 py-2 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-cyan-400 text-white font-semibold">
+                  <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow hover:bg-primary/90 px-4 py-2 h-10 rounded-xl bg-linear-to-r from-violet-500 to-cyan-400 text-white font-semibold">
                     <Save className="h-4 w-4 mr-2" aria-hidden="true" />
                     Save changes
                   </button>
