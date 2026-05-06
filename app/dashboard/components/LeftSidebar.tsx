@@ -1,6 +1,9 @@
 import React, { useState, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Sparkles, ChevronLeft, Compass, Users, Wifi, Bell, Settings as SettingsIcon, LogOut, LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export type DashboardTab = "Discover" | "Friend List" | "Online People" | "Notifications" | "Settings";
 
@@ -30,41 +33,59 @@ interface NavItemProps extends NavItemData {
 
 const NavItem = memo(({ label, icon: Icon, badge, isActive, badgeType, isCollapsed, onClick }: NavItemProps) => {
   return (
-    <button 
+    <Button 
+      variant="ghost"
       onClick={onClick}
-      className={`relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 ${isCollapsed ? "justify-center px-0" : "px-3"} ${isActive ? "text-white" : "text-white/50 hover:text-white hover:bg-white/5"}`} 
-      tabIndex={0}
-      title={isCollapsed ? label : ""}
+      className={cn(
+        "relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 justify-start px-3 font-normal",
+        isCollapsed && "justify-center px-0",
+        isActive ? "text-white hover:text-white hover:bg-transparent" : "text-white/50 hover:text-white hover:bg-white/5"
+      )}
+      asChild
     >
-      {/* Active Background Indicator */}
-      {isActive && (
-        <motion.div 
-          layoutId="activeTab"
-          className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-500 rounded-xl z-0"
-          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-        />
-      )}
+      <motion.button 
+        tabIndex={0}
+        title={isCollapsed ? label : ""}
+      >
+        {/* Active Background Indicator */}
+        {isActive && (
+          <motion.div 
+            layoutId="activeTab"
+            className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-500 rounded-xl z-0"
+            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+          />
+        )}
 
-      <span className={`relative z-10 grid place-items-center h-8 w-8 rounded-lg shrink-0 ${isActive ? "bg-white/15" : "bg-white/5"}`}>
-        <Icon className="h-4 w-4" aria-hidden="true" />
-      </span>
-      
-      {!isCollapsed && (
-        <motion.span 
-          initial={{ opacity: 0, x: -5 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.2, delay: 0.1 }}
-          className="relative z-10 flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
-        >
-          <span className="text-sm font-medium">{label}</span>
-          {badge && (
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeType === "live" ? "bg-white/20" : "bg-white/10 text-white/50"}`}>
-              {badge}
-            </span>
-          )}
-        </motion.span>
-      )}
-    </button>
+        <span className={cn(
+          "relative z-10 grid place-items-center h-8 w-8 rounded-lg shrink-0",
+          isActive ? "bg-white/15" : "bg-white/5"
+        )}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
+        </span>
+        
+        {!isCollapsed && (
+          <motion.span 
+            initial={{ opacity: 0, x: -5 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+            className="relative z-10 flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+          >
+            <span className="text-sm font-medium">{label}</span>
+            {badge && (
+              <Badge 
+                variant={badgeType === "live" ? "default" : "secondary"}
+                className={cn(
+                  "h-5 px-1.5 min-w-[20px] normal-case tracking-normal rounded-full border-0",
+                  badgeType === "live" ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
+                )}
+              >
+                {badge}
+              </Badge>
+            )}
+          </motion.span>
+        )}
+      </motion.button>
+    </Button>
   );
 });
 
@@ -98,14 +119,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             transition={{ duration: 0.2, delay: 0.1 }}
             className="ml-3 flex flex-col overflow-hidden whitespace-nowrap"
           >
-            <span className="text-lg font-black tracking-tight">Vibez</span>
+            <span className="text-lg font-black tracking-tight text-white">Vibez</span>
             <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">Beta v1.0</span>
           </motion.div>
         )}
 
-        <button 
+        <Button
+          variant="ghost"
+          size="icon-xs"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`grid place-items-center h-7 w-7 rounded-full bg-white/5 hover:bg-white/10 text-white/50 transition-colors ${isCollapsed ? "mx-auto" : "ml-auto"}`} 
+          className={cn(
+            "rounded-full bg-white/5 hover:bg-white/10 text-white/50",
+            isCollapsed ? "mx-auto" : "ml-auto"
+          )}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <motion.div
@@ -114,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </motion.div>
-        </button>
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -161,13 +187,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         >
           <div className="text-xs font-semibold text-violet-300">Go Pro ✨</div>
           <div className="text-[11px] text-white/50 mt-1 leading-snug">Unlimited matches, no ads.</div>
-          <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 shadow px-3 mt-3 w-full h-8 text-xs bg-linear-to-r from-violet-500 to-cyan-400 hover:opacity-90 text-white rounded-lg">Upgrade</button>
+          <Button size="sm" className="w-full mt-3 h-8 text-xs bg-linear-to-r from-violet-500 to-cyan-400 hover:opacity-90 text-white rounded-lg border-0">
+            Upgrade
+          </Button>
         </motion.div>
       )}
 
       {/* Footer / Logout */}
       <div className="mt-auto p-3 border-t border-white/5 shrink-0">
-        <button className={`group w-full flex items-center transition-colors duration-200 h-11 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 ${isCollapsed ? "justify-center px-0" : "px-3 gap-3"}`}>
+        <Button 
+          variant="destructive"
+          className={cn(
+            "w-full h-11 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border-0 flex items-center justify-start px-3",
+            isCollapsed && "justify-center px-0"
+          )}
+        >
           <span className="grid place-items-center h-8 w-8 rounded-lg bg-rose-500/15 shrink-0">
             <LogOut className="h-4 w-4" aria-hidden="true" />
           </span>
@@ -175,12 +209,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             <motion.span 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-sm font-medium overflow-hidden whitespace-nowrap"
+              className="text-sm font-medium overflow-hidden whitespace-nowrap ml-3"
             >
               Logout
             </motion.span>
           )}
-        </button>
+        </Button>
       </div>
     </motion.aside>
   );
