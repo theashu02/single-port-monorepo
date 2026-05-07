@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { Search, Filter, MessageCircle, UserPlus } from "lucide-react";
@@ -78,7 +80,7 @@ const UserCard: React.FC<{ user: User }> = ({ user }) => {
 
         {/* Actions */}
         <div className="mt-3 grid grid-cols-2 gap-1.5 w-full">
-          <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:bg-primary/90 px-3 h-8 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 text-[11px] font-semibold">
+          <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:bg-primary/90 px-3 h-8 rounded-lg bg-linear-to-r from-violet-500 to-fuchsia-500 text-[11px] font-semibold">
             <MessageCircle className="h-3 w-3 mr-1" aria-hidden="true" />
             Chat
           </button>
@@ -141,7 +143,7 @@ export const OnlinePeoplePage: React.FC = () => {
       {/* Tags Scroll Row */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {tags.map((tag, index) => (
-          <button key={index} className={`shrink-0 px-4 h-8 rounded-full text-xs font-semibold capitalize transition ${index === 0 ? "bg-gradient-to-r from-violet-500 to-cyan-400 text-white" : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"}`}>
+          <button key={index} className={`shrink-0 px-4 h-8 rounded-full text-xs font-semibold capitalize transition ${index === 0 ? "bg-linear-to-r from-violet-500 to-cyan-400 text-white" : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"}`}>
             {tag}
           </button>
         ))}

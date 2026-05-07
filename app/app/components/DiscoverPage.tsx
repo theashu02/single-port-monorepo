@@ -1,4 +1,5 @@
-import React from 'react'
+"use client";
+
 import Image from "next/image";
 import { Flame, Send, Smile, Sparkles } from 'lucide-react';
 

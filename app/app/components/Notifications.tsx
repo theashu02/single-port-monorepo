@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { Bell, CheckCheck, Sparkles, Heart, UserPlus, MessageCircle, Trash2, LucideIcon } from "lucide-react";

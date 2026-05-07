@@ -1,41 +1,43 @@
+"use client";
+
 import React, { useState, memo } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, ChevronLeft, Compass, Users, Wifi, Bell, Settings as SettingsIcon, LogOut, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export type DashboardTab = "Discover" | "Friend List" | "Online People" | "Notifications" | "Settings";
 
 interface NavItemData {
   label: DashboardTab;
   icon: LucideIcon;
+  href: string;
   badge?: string | number;
   badgeType?: "live" | "default";
 }
 
 const mainNavItems: NavItemData[] = [
-  { label: "Discover", icon: Compass, badge: "Live", badgeType: "live" },
-  { label: "Friend List", icon: Users, badge: 7 },
-  { label: "Online People", icon: Wifi, badge: 248 },
+  { label: "Discover", icon: Compass, href: "/app/discover", badge: "Live", badgeType: "live" },
+  { label: "Friend List", icon: Users, href: "/app/friend-list", badge: 7 },
+  { label: "Online People", icon: Wifi, href: "/app/online-people", badge: 248 },
 ];
 
 const accountNavItems: NavItemData[] = [
-  { label: "Notifications", icon: Bell, badge: 3 },
-  { label: "Settings", icon: SettingsIcon },
+  { label: "Notifications", icon: Bell, href: "/app/notifications", badge: 3 },
+  { label: "Settings", icon: SettingsIcon, href: "/app/settings" },
 ];
 
 interface NavItemProps extends NavItemData {
   isActive: boolean;
   isCollapsed: boolean;
-  onClick: () => void;
 }
 
-const NavItem = memo(({ label, icon: Icon, badge, isActive, badgeType, isCollapsed, onClick }: NavItemProps) => {
+const NavItem = memo(({ label, icon: Icon, href, badge, isActive, badgeType, isCollapsed }: NavItemProps) => {
   return (
     <Button 
       variant="ghost"
-      onClick={onClick}
       className={cn(
         "relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 justify-start px-3 font-normal",
         isCollapsed && "justify-center px-0",
@@ -43,48 +45,54 @@ const NavItem = memo(({ label, icon: Icon, badge, isActive, badgeType, isCollaps
       )}
       asChild
     >
-      <motion.button 
-        tabIndex={0}
-        title={isCollapsed ? label : ""}
-      >
-        {/* Active Background Indicator */}
-        {isActive && (
-          <motion.div 
-            layoutId="activeTab"
-            className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-500 rounded-xl z-0"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          />
-        )}
+      <Link href={href}>
+        <motion.div 
+          className={cn(
+            "flex items-center gap-3 w-full relative z-10",
+            isCollapsed && "justify-center gap-0 p-2"
+          )}
+          tabIndex={0}
+          title={isCollapsed ? label : ""}
+        >
+          {/* Active Background Indicator */}
+          {isActive && (
+            <motion.div 
+              layoutId="activeTab"
+              className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-500 rounded-xl z-0"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
 
-        <span className={cn(
-          "relative z-10 grid place-items-center h-8 w-8 rounded-lg shrink-0",
-          isActive ? "bg-white/15" : "bg-white/5"
-        )}>
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </span>
-        
-        {!isCollapsed && (
-          <motion.span 
-            initial={{ opacity: 0, x: -5 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, delay: 0.1 }}
-            className="relative z-10 flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
-          >
-            <span className="text-sm font-medium">{label}</span>
-            {badge && (
-              <Badge 
-                variant={badgeType === "live" ? "default" : "secondary"}
-                className={cn(
-                  "h-5 px-1.5 min-w-[20px] normal-case tracking-normal rounded-full border-0",
-                  badgeType === "live" ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
-                )}
-              >
-                {badge}
-              </Badge>
-            )}
-          </motion.span>
-        )}
-      </motion.button>
+          <span className={cn(
+            "relative z-10 grid place-items-center h-8 w-8 rounded-lg shrink-0",
+            isActive ? "bg-white/15" : "bg-white/5"
+          )}>
+            <Icon className="h-4 w-4" aria-hidden="true" />
+          </span>
+          
+          {!isCollapsed && (
+            <motion.span 
+              initial={{ opacity: 0, x: -5 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2, delay: 0.1 }}
+              className="relative z-10 flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+            >
+              <span className="text-sm font-medium">{label}</span>
+              {badge && (
+                <Badge 
+                  variant={badgeType === "live" ? "default" : "secondary"}
+                  className={cn(
+                    "h-5 px-1.5 min-w-[20px] normal-case tracking-normal rounded-full border-0",
+                    badgeType === "live" ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
+                  )}
+                >
+                  {badge}
+                </Badge>
+              )}
+            </motion.span>
+          )}
+        </motion.div>
+      </Link>
     </Button>
   );
 });
@@ -93,10 +101,9 @@ NavItem.displayName = "NavItem";
 
 interface SidebarProps {
   activeTab: DashboardTab;
-  setActiveTab: (tab: DashboardTab) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -151,7 +158,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             {...item} 
             isCollapsed={isCollapsed}
             isActive={activeTab === item.label} 
-            onClick={() => setActiveTab(item.label)}
           />
         ))}
 
@@ -173,7 +179,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             {...item} 
             isCollapsed={isCollapsed}
             isActive={activeTab === item.label} 
-            onClick={() => setActiveTab(item.label)}
           />
         ))}
       </nav>

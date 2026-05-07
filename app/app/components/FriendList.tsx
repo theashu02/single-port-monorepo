@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { Search, Grid3X3, List, UserPlus, Star, Ellipsis, MessageCircle, Phone, Video } from "lucide-react";
