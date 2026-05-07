@@ -121,7 +121,7 @@ Close practical loopholes (especially token exposure and weak session handling),
 
 ### Dashboard guest identity resolution
 
-**File:** `app/dashboard/page.tsx`
+**File:** `app/app/page.tsx`
 
 - Removed localStorage-derived guest user hydration.
 - Added guest session fetch via cookie-backed endpoint.
