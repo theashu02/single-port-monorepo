@@ -5,6 +5,7 @@ import StoreProvider from "@/lib/redux/StoreProvider";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
@@ -23,7 +24,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AuthProvider>
           <Toaster position="top-center" toastOptions={{ unstyled: true }} />
-          <StoreProvider>{children}</StoreProvider>
+          <TooltipProvider>
+            <StoreProvider>{children}</StoreProvider>
+          </TooltipProvider>
         </AuthProvider>
       </body>
     </html>

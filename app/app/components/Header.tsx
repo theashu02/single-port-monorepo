@@ -1,7 +1,14 @@
-import React from "react";
+"use client";
+
 import Image from "next/image";
 import { Sparkles, Search, Bell } from "lucide-react";
 import { DashboardTab } from "./LeftSidebar";
+import { useHeaderUser } from "./header/use-header-user";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface HeaderProps {
   activeTab: DashboardTab;
@@ -30,8 +37,9 @@ const tabContent: Record<DashboardTab, { title: string; description: string }> =
   }
 };
 
-export const Header: React.FC<HeaderProps> = ({ activeTab }) => {
+export const Header = ({ activeTab }: HeaderProps) => {
   const content = tabContent[activeTab] || tabContent["Discover"];
+  const { displayName, email, avatarSrc } = useHeaderUser();
 
   return (
     <header className="flex items-center gap-3 px-4 lg:px-6 h-16 border-b border-white/5 glass shrink-0">
@@ -66,15 +74,31 @@ export const Header: React.FC<HeaderProps> = ({ activeTab }) => {
         </button>
 
         {/* User Profile Pill */}
-        <div className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
-          <div className="hidden sm:flex flex-col text-right leading-tight">
-            <span className="text-xs font-semibold">You</span>
-            <span className="text-[10px] text-emerald-400">● online</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex max-w-[56vw] items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1.5 pr-1 transition-colors hover:bg-white/10 sm:max-w-[240px] sm:pl-2 cursor-pointer">
+          <div className="hidden min-w-0 sm:flex flex-col text-right leading-tight">
+            <span className="truncate text-xs font-semibold">{displayName}</span>
+            <span className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+              </span>
+              online
+            </span>
           </div>
-          <span className="relative flex shrink-0 overflow-hidden rounded-full h-8 w-8 ring-2 ring-violet-400/40">
-            <Image className="aspect-square h-full w-full object-cover" src="https://api.dicebear.com/7.x/adventurer/svg?seed=you-vibez&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="User Avatar" fill />
+          <span className="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-violet-400/40">
+            <Image className="aspect-square h-full w-full object-cover" src={avatarSrc} alt={`${displayName} avatar`} fill sizes="32px" />
           </span>
-        </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start" className="bg-[#0c0a18] border-white/10 text-white rounded-lg shadow-2xl p-3">
+            <div className="flex flex-col gap-0.5">
+              <p className="font-bold text-sm whitespace-nowrap">{displayName}</p>
+              {email && <p className="text-[10px] text-white/50">{email}</p>}
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </header>
   );
