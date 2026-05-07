@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AVATAR_SEEDS, AvatarURL, GENDER_OPTIONS, generateNickname, GuestSessionData, INTEREST_OPTIONS, transition, variants } from "@/core/constants/guest_constant";
 import { createGuestSession, refreshGuestSession } from "@/core/apis/Guest_API";
 import { customToast } from "@/components/ui/toast";
+import Loader from "@/components/ui/Loader";
 
 const GUEST_MARKER_KEY = "guest_session_present";
 
@@ -98,16 +99,8 @@ export default function GuestLoginPage() {
 
   if (step === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-(--gradient-bg)">
-        <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-primary-foreground" />
-            </div>
-            {!shouldReduceMotion && <div className="absolute inset-0 rounded-3xl bg-primary/30 -z-10 animate-pulse" />}
-          </div>
-          <p className="text-muted-foreground text-sm tracking-wide">Setting things up…</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader />
       </div>
     );
   }
