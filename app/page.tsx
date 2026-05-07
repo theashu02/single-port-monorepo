@@ -64,7 +64,7 @@ export default function HomePage() {
       </div>
 
       <div style={{ marginTop: '20px' }} className='bg-blue-500'>
-        <Link href="/dashboard" style={{ color: 'blue', textDecoration: 'underline' }}>
+        <Link href="/app" style={{ color: 'blue', textDecoration: 'underline' }}>
           Go to Dashboard to check Redux State
         </Link>
       </div>

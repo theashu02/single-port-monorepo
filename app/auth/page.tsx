@@ -8,7 +8,7 @@ import { GuestLoginButton } from "@/components/auth/GuestLoginButton";
 
 export default async function AuthPage() {
   const session = await getServerAuthSession();
-  if (session?.user) redirect("/dashboard");
+  if (session?.user) redirect("/app");
 
   return (
     <main className="flex min-h-screen">

@@ -21,7 +21,7 @@ export function EmailAuthForm() {
       name: form.name,
       isRegister: mode === "register" ? "true" : "false",
       redirect: false,
-      callbackUrl: "/dashboard",
+      callbackUrl: "/app",
     });
 
     setLoading(false);

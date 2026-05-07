@@ -12,7 +12,7 @@ export function GoogleButton() {
       variant="outline"
       className="w-full"
       disabled={pending}
-      onClick={() => start(() => { void signIn("google", { callbackUrl: "/dashboard" }); })}
+      onClick={() => start(() => { void signIn("google", { callbackUrl: "/app" }); })}
     >
       {pending ? "Redirecting..." : "Continue with Google"}
     </Button>

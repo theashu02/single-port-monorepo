@@ -36,7 +36,7 @@ export default function GuestLoginPage() {
         await refreshGuestSession(guestData?.guest_id);
         localStorage.setItem(GUEST_MARKER_KEY, "1");
         customToast("Welcome back!", "success", "Your session has been restored.");
-        router.push("/dashboard");
+        router.push("/app");
       } catch {
         localStorage.removeItem(GUEST_MARKER_KEY);
         setStep(1);
@@ -89,7 +89,7 @@ export default function GuestLoginPage() {
       await createGuestSession(payload);
       localStorage.setItem(GUEST_MARKER_KEY, "1");
       customToast("Welcome aboard!", "success", "Your guest session is ready.");
-      router.push("/dashboard");
+      router.push("/app");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setLoading(false);

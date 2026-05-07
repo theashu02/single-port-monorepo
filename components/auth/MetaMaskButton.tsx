@@ -42,7 +42,7 @@ export function MetaMaskButton() {
         signature,
         nonce,
         redirect: false,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/app",
       });
 
       if (result?.error) {

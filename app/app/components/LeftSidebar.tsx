@@ -1,126 +1,53 @@
 "use client";
 
-import React, { useState, memo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronLeft, Compass, Users, Wifi, Bell, Settings as SettingsIcon, LogOut, LucideIcon } from "lucide-react";
+import { ChevronLeft, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { ACCOUNT_NAV_ITEMS, MAIN_NAV_ITEMS } from "./left-sidebar/constants";
+import { SidebarNavItem } from "./left-sidebar/nav-item";
+import type { DashboardTab } from "./left-sidebar/types";
+import { useSidebarController } from "./left-sidebar/use-sidebar-controller";
 
-export type DashboardTab = "Discover" | "Friend List" | "Online People" | "Notifications" | "Settings";
-
-interface NavItemData {
-  label: DashboardTab;
-  icon: LucideIcon;
-  href: string;
-  badge?: string | number;
-  badgeType?: "live" | "default";
-}
-
-const mainNavItems: NavItemData[] = [
-  { label: "Discover", icon: Compass, href: "/app/discover", badge: "Live", badgeType: "live" },
-  { label: "Friend List", icon: Users, href: "/app/friend-list", badge: 7 },
-  { label: "Online People", icon: Wifi, href: "/app/online-people", badge: 248 },
-];
-
-const accountNavItems: NavItemData[] = [
-  { label: "Notifications", icon: Bell, href: "/app/notifications", badge: 3 },
-  { label: "Settings", icon: SettingsIcon, href: "/app/settings" },
-];
-
-interface NavItemProps extends NavItemData {
-  isActive: boolean;
-  isCollapsed: boolean;
-}
-
-const NavItem = memo(({ label, icon: Icon, href, badge, isActive, badgeType, isCollapsed }: NavItemProps) => {
-  return (
-    <Button 
-      variant="ghost"
-      className={cn(
-        "relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 justify-start px-0 font-normal",
-        isCollapsed && "justify-center",
-        isActive ? "text-white hover:text-white hover:bg-transparent" : "text-white/50 hover:text-white hover:bg-white/5"
-      )}
-      asChild
-    >
-      <Link href={href}>
-        <motion.div 
-          className={cn(
-            "flex items-center gap-3 w-full h-full relative z-10 px-3",
-            isCollapsed && "justify-center gap-0 px-0"
-          )}
-          tabIndex={0}
-          title={isCollapsed ? label : ""}
-        >
-          {/* Active Background Indicator */}
-          {isActive && (
-            <motion.div 
-              layoutId="activeTab"
-              className="absolute inset-0 bg-linear-to-r from-violet-600 to-cyan-500 rounded-xl z-0"
-              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-          )}
-
-          <span className={cn(
-            "relative z-10 grid place-items-center h-8 w-8 rounded-lg shrink-0",
-            isActive ? "bg-white/15" : "bg-white/5"
-          )}>
-            <Icon className="h-4 w-4" aria-hidden="true" />
-          </span>
-          
-          {!isCollapsed && (
-            <motion.span 
-              initial={{ opacity: 0, x: -5 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2, delay: 0.1 }}
-              className="relative z-10 flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
-            >
-              <span className="text-sm font-medium">{label}</span>
-              {badge && (
-                <Badge 
-                  variant={badgeType === "live" ? "default" : "secondary"}
-                  className={cn(
-                    "h-5 px-1.5 min-w-[20px] normal-case tracking-normal rounded-full border-0",
-                    badgeType === "live" ? "bg-white/20 text-white" : "bg-white/10 text-white/50"
-                  )}
-                >
-                  {badge}
-                </Badge>
-              )}
-            </motion.span>
-          )}
-        </motion.div>
-      </Link>
-    </Button>
-  );
-});
-
-NavItem.displayName = "NavItem";
+export type { DashboardTab } from "./left-sidebar/types";
 
 interface SidebarProps {
   activeTab: DashboardTab;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+function SidebarAccountDivider({ isCollapsed }: { isCollapsed: boolean }) {
+  if (isCollapsed) {
+    return <div className="mx-2 mt-8 mb-2 h-px bg-white/10" />;
+  }
 
   return (
-    <motion.aside 
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="mt-8 mb-2 overflow-hidden whitespace-nowrap px-2 text-[10px] uppercase tracking-[0.2em] text-white/30"
+    >
+      Account
+    </motion.div>
+  );
+}
+
+export function Sidebar({ activeTab }: SidebarProps) {
+  const { isCollapsed, toggleCollapsed, handleLogout, isLoggingOut } = useSidebarController();
+
+  return (
+    <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 80 : 240 }}
       transition={{ type: "spring", stiffness: 300, damping: 30, restDelta: 0.5 }}
-      className="hidden md:flex relative z-30 h-screen flex-col bg-[#0c0a18] border-r border-white/5 overflow-hidden will-change-[width]"
+      className="relative z-30 hidden h-screen flex-col overflow-hidden border-r border-white/5 bg-[#0c0a18] will-change-[width] md:flex"
     >
-      {/* Header */}
-      <div className="flex items-center h-16 px-4 border-b border-white/5 shrink-0 overflow-hidden">
-        <div className="shrink-0 grid place-items-center h-10 w-10 rounded-xl bg-linear-to-br from-violet-500 to-cyan-400">
+      <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/5 px-4">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-violet-500 to-cyan-400">
           <Sparkles className="h-5 w-5 text-white" aria-hidden="true" />
         </div>
-        
+
         {!isCollapsed && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2, delay: 0.1 }}
@@ -134,95 +61,75 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab }) => {
         <Button
           variant="ghost"
           size="icon-xs"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(
-            "rounded-full bg-white/5 hover:bg-white/10 text-white/50",
-            isCollapsed ? "mx-auto" : "ml-auto"
-          )}
+          onClick={toggleCollapsed}
+          className={cn("rounded-full bg-white/5 text-white/50 hover:bg-white/10", isCollapsed ? "mx-auto" : "ml-auto")}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <motion.div
-            animate={{ rotate: isCollapsed ? 180 : 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          >
+          <motion.div animate={{ rotate: isCollapsed ? 180 : 0 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}>
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </motion.div>
         </Button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1 scrollbar-hide">
-        {mainNavItems.map((item) => (
-          <NavItem 
-            key={item.label} 
-            {...item} 
+      <nav className="scrollbar-hide flex-1 space-y-1 overflow-y-auto px-3 py-5">
+        {MAIN_NAV_ITEMS.map((item) => (
+          <SidebarNavItem
+            key={item.label}
+            {...item}
             isCollapsed={isCollapsed}
-            isActive={activeTab === item.label} 
+            isActive={activeTab === item.label}
           />
         ))}
 
-        {!isCollapsed ? (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-8 mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-white/30 overflow-hidden whitespace-nowrap"
-          >
-            Account
-          </motion.div>
-        ) : (
-          <div className="mt-8 mb-2 h-px bg-white/10 mx-2" />
-        )}
+        <SidebarAccountDivider isCollapsed={isCollapsed} />
 
-        {accountNavItems.map((item) => (
-          <NavItem 
-            key={item.label} 
-            {...item} 
+        {ACCOUNT_NAV_ITEMS.map((item) => (
+          <SidebarNavItem
+            key={item.label}
+            {...item}
             isCollapsed={isCollapsed}
-            isActive={activeTab === item.label} 
+            isActive={activeTab === item.label}
           />
         ))}
       </nav>
 
-      {/* Go Pro Promo */}
       {!isCollapsed && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-3 mb-3 rounded-xl p-4 bg-violet-500/10 border border-violet-500/20 overflow-hidden shrink-0"
+          className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-violet-500/20 bg-violet-500/10 p-4"
         >
-          <div className="text-xs font-semibold text-violet-300">Go Pro ✨</div>
-          <div className="text-[11px] text-white/50 mt-1 leading-snug">Unlimited matches, no ads.</div>
-          <Button size="sm" className="w-full mt-3 h-8 text-xs bg-linear-to-r from-violet-500 to-cyan-400 hover:opacity-90 text-white rounded-lg border-0">
+          <div className="text-xs font-semibold text-violet-300">Go Pro</div>
+          <div className="mt-1 text-[11px] leading-snug text-white/50">Unlimited matches, no ads.</div>
+          <Button size="sm" className="mt-3 h-8 w-full rounded-lg border-0 bg-linear-to-r from-violet-500 to-cyan-400 text-xs text-white hover:opacity-90">
             Upgrade
           </Button>
         </motion.div>
       )}
 
-      {/* Footer / Logout */}
-      <div className="mt-auto p-3 border-t border-white/5 shrink-0">
-        <Button 
+      <div className="mt-auto shrink-0 border-t border-white/5 p-3">
+        <Button
           variant="destructive"
           className={cn(
-            "w-full h-11 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border-0 flex items-center justify-start px-3",
-            isCollapsed && "justify-center px-0"
+            "flex h-11 w-full items-center justify-start rounded-xl border-0 bg-rose-500/10 px-3 text-rose-400 hover:bg-rose-500/20",
+            isCollapsed && "justify-center px-0",
           )}
+          onClick={handleLogout}
+          disabled={isLoggingOut}
         >
-          <span className="grid place-items-center h-8 w-8 rounded-lg bg-rose-500/15 shrink-0">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-rose-500/15">
             <LogOut className="h-4 w-4" aria-hidden="true" />
           </span>
+
           {!isCollapsed && (
-            <motion.span 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-sm font-medium overflow-hidden whitespace-nowrap ml-3"
-            >
-              Logout
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="ml-3 overflow-hidden whitespace-nowrap text-sm font-medium">
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </motion.span>
           )}
         </Button>
       </div>
     </motion.aside>
   );
-};
+}
 
 export default Sidebar;
