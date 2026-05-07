@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { SidebarNavItemData } from "./types";
 
@@ -12,7 +13,7 @@ interface SidebarNavItemProps extends SidebarNavItemData {
 }
 
 const SidebarNavItemBase = ({ label, icon: Icon, href, badge, isActive, badgeType, isCollapsed }: SidebarNavItemProps) => {
-  return (
+  const navButton = (
     <Button
       variant="ghost"
       className={cn(
@@ -25,8 +26,6 @@ const SidebarNavItemBase = ({ label, icon: Icon, href, badge, isActive, badgeTyp
       <Link href={href} aria-current={isActive ? "page" : undefined}>
         <motion.div
           className={cn("relative z-10 flex h-full w-full items-center gap-3 px-3", isCollapsed && "justify-center gap-0 px-0")}
-          tabIndex={0}
-          title={isCollapsed ? label : ""}
         >
           {isActive && (
             <motion.div
@@ -64,6 +63,24 @@ const SidebarNavItemBase = ({ label, icon: Icon, href, badge, isActive, badgeTyp
         </motion.div>
       </Link>
     </Button>
+  );
+
+  if (!isCollapsed) {
+    return navButton;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{navButton}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        sideOffset={8}
+        showArrow={false}
+        className="rounded-md border border-white/10 bg-[#151226] px-2.5 py-1 text-white"
+      >
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ChevronLeft, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ACCOUNT_NAV_ITEMS, MAIN_NAV_ITEMS } from "./left-sidebar/constants";
 import { SidebarNavItem } from "./left-sidebar/nav-item";
@@ -72,25 +73,27 @@ export function Sidebar({ activeTab }: SidebarProps) {
       </div>
 
       <nav className="scrollbar-hide flex-1 space-y-1 overflow-y-auto px-3 py-5">
-        {MAIN_NAV_ITEMS.map((item) => (
-          <SidebarNavItem
-            key={item.label}
-            {...item}
-            isCollapsed={isCollapsed}
-            isActive={activeTab === item.label}
-          />
-        ))}
+        <TooltipProvider delayDuration={120}>
+          {MAIN_NAV_ITEMS.map((item) => (
+            <SidebarNavItem
+              key={item.label}
+              {...item}
+              isCollapsed={isCollapsed}
+              isActive={activeTab === item.label}
+            />
+          ))}
 
-        <SidebarAccountDivider isCollapsed={isCollapsed} />
+          <SidebarAccountDivider isCollapsed={isCollapsed} />
 
-        {ACCOUNT_NAV_ITEMS.map((item) => (
-          <SidebarNavItem
-            key={item.label}
-            {...item}
-            isCollapsed={isCollapsed}
-            isActive={activeTab === item.label}
-          />
-        ))}
+          {ACCOUNT_NAV_ITEMS.map((item) => (
+            <SidebarNavItem
+              key={item.label}
+              {...item}
+              isCollapsed={isCollapsed}
+              isActive={activeTab === item.label}
+            />
+          ))}
+        </TooltipProvider>
       </nav>
 
       {!isCollapsed && (
