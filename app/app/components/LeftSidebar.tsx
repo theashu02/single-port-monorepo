@@ -39,8 +39,8 @@ const NavItem = memo(({ label, icon: Icon, href, badge, isActive, badgeType, isC
     <Button 
       variant="ghost"
       className={cn(
-        "relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 justify-start px-3 font-normal",
-        isCollapsed && "justify-center px-0",
+        "relative w-full flex items-center gap-3 h-12 rounded-xl transition-colors duration-200 justify-start px-0 font-normal",
+        isCollapsed && "justify-center",
         isActive ? "text-white hover:text-white hover:bg-transparent" : "text-white/50 hover:text-white hover:bg-white/5"
       )}
       asChild
@@ -48,8 +48,8 @@ const NavItem = memo(({ label, icon: Icon, href, badge, isActive, badgeType, isC
       <Link href={href}>
         <motion.div 
           className={cn(
-            "flex items-center gap-3 w-full relative z-10",
-            isCollapsed && "justify-center gap-0 p-2"
+            "flex items-center gap-3 w-full h-full relative z-10 px-3",
+            isCollapsed && "justify-center gap-0 px-0"
           )}
           tabIndex={0}
           title={isCollapsed ? label : ""}
