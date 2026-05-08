@@ -12,6 +12,7 @@ export type ClientMessage =
   | AcceptChatMessage
   | RejectChatMessage
   | ChatMessagePayload
+  | ChatTypingStatusMessage
   | EndChatMessage;
 
 export interface ChatRequestMessage {
@@ -35,6 +36,12 @@ export interface ChatMessagePayload {
   type: "chat_message";
   channel: string;
   text: string;
+}
+
+export interface ChatTypingStatusMessage {
+  type: "chat_typing";
+  channel: string;
+  isTyping: boolean;
 }
 
 export interface EndChatMessage {
@@ -97,4 +104,11 @@ export interface ChatMessageEvent {
   channel: string;
   fromId: string;
   text: string;
+}
+
+export interface ChatTypingEvent {
+  type: "chat_typing";
+  channel: string;
+  fromId: string;
+  isTyping: boolean;
 }

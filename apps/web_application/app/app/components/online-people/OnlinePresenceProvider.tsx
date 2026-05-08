@@ -17,6 +17,7 @@ import {
   chatExpired,
   chatReady,
   chatRejected,
+  chatTypingReceived,
   inviteReceived,
   messageReceived,
 } from "@/lib/redux/slices/chatSlice";
@@ -51,6 +52,7 @@ interface OnlinePresenceActions {
   acceptChat: (fromId: string) => boolean;
   rejectChat: (fromId: string) => boolean;
   sendMessage: (channel: string, text: string) => boolean;
+  sendTypingStatus: (channel: string, isTyping: boolean) => boolean;
   endChat: (channel: string) => boolean;
 }
 
@@ -97,7 +99,13 @@ type ServerEvent =
   | { type: "chat_rejected"; byId: string }
   | { type: "chat_busy"; byId: string }
   | { type: "chat_expired"; byId: string }
-  | { type: "chat_message"; channel: string; fromId: string; text: string };
+  | { type: "chat_message"; channel: string; fromId: string; text: string }
+  | {
+      type: "chat_typing";
+      channel: string;
+      fromId: string;
+      isTyping: boolean;
+    };
 
 function parseServerEvent(raw: string): ServerEvent | null {
   let parsed: unknown;
@@ -156,6 +164,18 @@ function parseServerEvent(raw: string): ServerEvent | null {
       const fromId = parseNonEmptyString(parsed.fromId);
       if (!channel || !fromId || typeof parsed.text !== "string") return null;
       return { type: "chat_message", channel, fromId, text: parsed.text };
+    }
+    case "chat_typing": {
+      const channel = parseNonEmptyString(parsed.channel);
+      const fromId = parseNonEmptyString(parsed.fromId);
+      if (!channel || !fromId || typeof parsed.isTyping !== "boolean")
+        return null;
+      return {
+        type: "chat_typing",
+        channel,
+        fromId,
+        isTyping: parsed.isTyping,
+      };
     }
     default:
       return null;
@@ -386,6 +406,15 @@ export function OnlinePresenceProvider({
             );
             return;
           }
+          case "chat_typing":
+            dispatchRef.current(
+              chatTypingReceived({
+                channel: msg.channel,
+                fromId: msg.fromId,
+                isTyping: msg.isTyping,
+              }),
+            );
+            return;
         }
       };
 
@@ -463,6 +492,12 @@ export function OnlinePresenceProvider({
     [send],
   );
 
+  const sendTypingStatus = useCallback(
+    (channel: string, isTyping: boolean) =>
+      send({ type: "chat_typing", channel, isTyping }),
+    [send],
+  );
+
   const endChat = useCallback(
     (channel: string) => send({ type: "end_chat", channel }),
     [send],
@@ -474,9 +509,17 @@ export function OnlinePresenceProvider({
       acceptChat,
       rejectChat,
       sendMessage,
+      sendTypingStatus,
       endChat,
     }),
-    [acceptChat, endChat, rejectChat, requestChat, sendMessage],
+    [
+      acceptChat,
+      endChat,
+      rejectChat,
+      requestChat,
+      sendMessage,
+      sendTypingStatus,
+    ],
   );
 
   return (

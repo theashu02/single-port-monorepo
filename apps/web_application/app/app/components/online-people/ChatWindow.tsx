@@ -1,16 +1,17 @@
 "use client";
 
 import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Card, CardFooter, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowUp, Sparkles, User, X } from "lucide-react";
+import { ArrowUp, Sparkles, X } from "lucide-react";
 import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { chatClosed, selectChannelMessages, selectChatChannel, selectChatPeer, selectChatPhase, type ChatMessage } from "@/lib/redux/slices/chatSlice";
+import { chatClosed, selectChannelMessages, selectChatChannel, selectChatPeer, selectChatPhase, selectIsPeerTyping, type ChatMessage } from "@/lib/redux/slices/chatSlice";
 import { selectCurrentUserId } from "@/lib/redux/slices/presenceSlice";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+
+const TYPING_IDLE_MS = 1200;
 
 const MessageRow = memo(({ msg, isMine }: { msg: ChatMessage; isMine: boolean }) => {
   const time = useMemo(
@@ -49,21 +50,63 @@ const ChatWindow: React.FC = memo(() => {
   const peer = useAppSelector(selectChatPeer);
   const channel = useAppSelector(selectChatChannel);
   const messages = useAppSelector(selectChannelMessages(channel));
+  const selectPeerTyping = useMemo(() => selectIsPeerTyping(channel, peer?.id), [channel, peer?.id]);
+  const isPeerTyping = useAppSelector(selectPeerTyping);
   const currentUserId = useAppSelector(selectCurrentUserId);
-  const { sendMessage, endChat } = useOnlinePresenceActions();
+  const { sendMessage, sendTypingStatus, endChat } = useOnlinePresenceActions();
 
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeChannelRef = useRef<string | null>(null);
   const closeSentRef = useRef(false);
+  const typingChannelRef = useRef<string | null>(null);
+  const typingIdleTimerRef = useRef<number | null>(null);
+
+  const clearTypingTimer = useCallback(() => {
+    if (!typingIdleTimerRef.current) return;
+    window.clearTimeout(typingIdleTimerRef.current);
+    typingIdleTimerRef.current = null;
+  }, []);
+
+  const stopTyping = useCallback(() => {
+    clearTypingTimer();
+    const typingChannel = typingChannelRef.current;
+    if (!typingChannel) return;
+
+    sendTypingStatus(typingChannel, false);
+    typingChannelRef.current = null;
+  }, [clearTypingTimer, sendTypingStatus]);
+
+  const startTyping = useCallback(
+    (targetChannel: string) => {
+      if (typingChannelRef.current !== targetChannel) {
+        stopTyping();
+        if (sendTypingStatus(targetChannel, true)) {
+          typingChannelRef.current = targetChannel;
+        }
+      }
+
+      clearTypingTimer();
+      typingIdleTimerRef.current = window.setTimeout(stopTyping, TYPING_IDLE_MS);
+    },
+    [clearTypingTimer, sendTypingStatus, stopTyping],
+  );
 
   useEffect(() => {
     activeChannelRef.current = phase === "open" ? channel : null;
     if (phase === "open") closeSentRef.current = false;
-  }, [channel, phase]);
+    if (phase !== "open") stopTyping();
+  }, [channel, phase, stopTyping]);
+
+  useEffect(() => {
+    return () => {
+      stopTyping();
+    };
+  }, [channel, stopTyping]);
 
   useEffect(() => {
     const endActiveChat = () => {
+      stopTyping();
       const activeChannel = activeChannelRef.current;
       if (!activeChannel || closeSentRef.current) return;
       closeSentRef.current = true;
@@ -75,7 +118,7 @@ const ChatWindow: React.FC = memo(() => {
       endActiveChat();
       window.removeEventListener("pagehide", endActiveChat);
     };
-  }, [endChat]);
+  }, [endChat, stopTyping]);
 
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,9 +127,25 @@ const ChatWindow: React.FC = memo(() => {
   const handleSend = useCallback(() => {
     const text = draft.trim();
     if (!text || !channel) return;
+    stopTyping();
     const sent = sendMessage(channel, text);
     if (sent) setDraft("");
-  }, [channel, draft, sendMessage]);
+  }, [channel, draft, sendMessage, stopTyping]);
+
+  const handleDraftChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setDraft(value);
+
+      if (!channel || phase !== "open") return;
+      if (value.trim()) {
+        startTyping(channel);
+      } else {
+        stopTyping();
+      }
+    },
+    [channel, phase, startTyping, stopTyping],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -99,19 +158,18 @@ const ChatWindow: React.FC = memo(() => {
   );
 
   const handleClose = useCallback(() => {
+    stopTyping();
     if (channel) {
       closeSentRef.current = true;
       endChat(channel);
     }
     dispatch(chatClosed());
-  }, [channel, dispatch, endChat]);
+  }, [channel, dispatch, endChat, stopTyping]);
 
   if (phase !== "open" || !peer || !channel) return null;
 
   return (
-    <div
-      className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in slide-in-from-right-8 duration-500 overflow-hidden ring-1 ring-white/5"
-    >
+    <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in slide-in-from-right-8 duration-500 overflow-hidden ring-1 ring-white/5">
       <div className="flex items-center justify-between px-6 py-5 bg-linear-to-b from-white/3 to-transparent">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -123,7 +181,7 @@ const ChatWindow: React.FC = memo(() => {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-zinc-100 tracking-tight">{peer.name}</span>
-            <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-widest">Active</span>
+            <span className={`text-[10px] font-semibold uppercase tracking-widest ${isPeerTyping ? "text-violet-300" : "text-emerald-400"}`}>{isPeerTyping ? "Typing..." : "Online"}</span>
           </div>
         </div>
 
@@ -152,7 +210,7 @@ const ChatWindow: React.FC = memo(() => {
 
       <div className="p-5 pt-2">
         <div className="relative flex items-end gap-2 bg-zinc-900/50 border border-white/5 rounded-[1.8rem] p-2 pr-2.5 focus-within:border-violet-500/30 focus-within:ring-4 focus-within:ring-violet-500/10 transition-all">
-          <Textarea rows={1} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={handleKeyDown} placeholder="Write a message..." className="min-h-[44px] max-h-[120px] resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-600 py-3 px-4 scrollbar-hide text-[15px]" />
+          <Textarea rows={1} value={draft} onChange={handleDraftChange} onKeyDown={handleKeyDown} placeholder="Write a message..." className="min-h-[44px] max-h-[120px] resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-600 py-3 px-4 scrollbar-hide text-[15px]" />
           <Button size="icon" onClick={handleSend} disabled={!draft.trim()} className="h-9 w-9 shrink-0 rounded-full bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 transition-all active:scale-90">
             <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
           </Button>

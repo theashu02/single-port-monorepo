@@ -2,6 +2,7 @@ import type {
   AcceptChatMessage,
   ChatMessagePayload,
   ChatRequestMessage,
+  ChatTypingStatusMessage,
   ClientMessage,
   RejectChatMessage,
 } from "../types";
@@ -69,6 +70,17 @@ export const parseClientMessage = (raw: unknown): ClientMessage | null => {
       type: "chat_message",
       channel: parsed.channel,
       text: parsed.text,
+    };
+    return msg;
+  }
+
+  if (parsed.type === "chat_typing") {
+    if (typeof parsed.channel !== "string" || !parsed.channel) return null;
+    if (typeof parsed.isTyping !== "boolean") return null;
+    const msg: ChatTypingStatusMessage = {
+      type: "chat_typing",
+      channel: parsed.channel,
+      isTyping: parsed.isTyping,
     };
     return msg;
   }

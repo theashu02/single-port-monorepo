@@ -5,6 +5,7 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 export interface ChatUser {
   id: string;
   name: string;
+  avatarUrl?: string;
 }
 
 export interface ChatMessage {
@@ -37,6 +38,8 @@ export interface ChatState {
   channel: string | null;
   /** Messages keyed by channel. Kept outside `channel` so history survives reconnects. */
   messagesByChannel: Record<string, ChatMessage[]>;
+  /** One lightweight typing marker per channel. */
+  typingByChannel: Record<string, string | null>;
 }
 
 const initialState: ChatState = {
@@ -44,6 +47,7 @@ const initialState: ChatState = {
   peer: null,
   channel: null,
   messagesByChannel: {},
+  typingByChannel: {},
 };
 
 // ── Slice ─────────────────────────────────────────────────────────────────────
@@ -89,6 +93,7 @@ const chatSlice = createSlice({
       if (!state.messagesByChannel[action.payload.channel]) {
         state.messagesByChannel[action.payload.channel] = [];
       }
+      state.typingByChannel[action.payload.channel] = null;
     },
 
     /**
@@ -114,6 +119,21 @@ const chatSlice = createSlice({
         text,
         ts,
       });
+      if (state.typingByChannel[channel] === fromId) {
+        state.typingByChannel[channel] = null;
+      }
+    },
+
+    chatTypingReceived(
+      state,
+      action: PayloadAction<{
+        channel: string;
+        fromId: string;
+        isTyping: boolean;
+      }>,
+    ) {
+      const { channel, fromId, isTyping } = action.payload;
+      state.typingByChannel[channel] = isTyping ? fromId : null;
     },
 
     /**
@@ -140,6 +160,9 @@ const chatSlice = createSlice({
         state.phase = "idle";
         state.peer = null;
         state.channel = null;
+        if (channel) {
+          delete state.typingByChannel[channel];
+        }
       }
     },
 
@@ -165,9 +188,13 @@ const chatSlice = createSlice({
      * Local user closed the chat window or declined an invite.
      */
     chatClosed(state) {
+      const channel = state.channel;
       state.phase = "idle";
       state.peer = null;
       state.channel = null;
+      if (channel) {
+        delete state.typingByChannel[channel];
+      }
     },
   },
 });
@@ -177,6 +204,7 @@ export const {
   inviteReceived,
   chatReady,
   messageReceived,
+  chatTypingReceived,
   chatRejected,
   chatBusy,
   chatExpired,
@@ -199,3 +227,7 @@ export const selectIsLocalChatLocked = (s: RootState) =>
 export const selectChannelMessages =
   (channel: string | null) => (s: RootState) =>
     channel ? (s.chat.messagesByChannel[channel] ?? []) : [];
+export const selectIsPeerTyping =
+  (channel: string | null, peerId: string | null | undefined) =>
+  (s: RootState) =>
+    Boolean(channel && peerId && s.chat.typingByChannel[channel] === peerId);

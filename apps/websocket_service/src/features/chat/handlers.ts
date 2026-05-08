@@ -12,6 +12,7 @@ import type {
   ChatMessageEvent,
   ChatReadyEvent,
   ChatRejectedEvent,
+  ChatTypingEvent,
 } from "../../types";
 import {
   publishBusyStatus,
@@ -267,6 +268,21 @@ export const handleSocketMessage = (
       endedById: userId,
       otherId: otherId ?? null,
     });
+    return;
+  }
+
+  if (message.type === "chat_typing") {
+    if (chatStore.getBusyChannel(userId) !== message.channel) {
+      return;
+    }
+
+    const typingEvent: ChatTypingEvent = {
+      type: "chat_typing",
+      channel: message.channel,
+      fromId: userId,
+      isTyping: message.isTyping,
+    };
+    socket.publish(message.channel, JSON.stringify(typingEvent));
     return;
   }
 
