@@ -1,0 +1,294 @@
+import { INVITE_TIMEOUT_MS, userTopic } from "../../config";
+import { logInfo, logWarn } from "../../logger";
+import {
+  parseClientMessage,
+  rawMessageKind,
+} from "../../messages/client-message";
+import { chatStore, roomId } from "../../state/chat-store";
+import { presenceStore } from "../../state/presence-store";
+import type { RealtimeSocket } from "../../transport/socket";
+import type {
+  ChatInviteEvent,
+  ChatMessageEvent,
+  ChatReadyEvent,
+  ChatRejectedEvent,
+} from "../../types";
+import {
+  publishBusyStatus,
+  publishPresenceSnapshot,
+  sendPresenceSnapshot,
+} from "../presence/events";
+
+export const handleSocketMessage = (
+  socket: RealtimeSocket,
+  rawMessage: unknown,
+) => {
+  const identity = presenceStore.getConnectionIdentity(socket.raw);
+  if (!identity) {
+    logWarn("message.rejected", {
+      reason: "missing_connection_identity",
+      messageType: rawMessageKind(rawMessage),
+    });
+    return;
+  }
+
+  const userId = identity.id;
+  const presence = presenceStore.getUser(userId);
+  if (!presence) {
+    logWarn("message.rejected", {
+      reason: "missing_presence",
+      userId,
+      messageType: rawMessageKind(rawMessage),
+    });
+    return;
+  }
+
+  const activeConnection = presenceStore.getActiveConnection(userId);
+  if (!activeConnection || activeConnection.raw !== socket.raw) {
+    logWarn("message.rejected", {
+      reason: "stale_connection",
+      userId,
+      messageType: rawMessageKind(rawMessage),
+    });
+    return;
+  }
+
+  const message = parseClientMessage(rawMessage);
+  if (!message) {
+    logWarn("message.invalid", {
+      userId,
+      messageType: rawMessageKind(rawMessage),
+    });
+    return;
+  }
+
+  if (message.type === "chat_request") {
+    const targetId = message.targetId;
+    logInfo("chat.request_received", {
+      fromId: userId,
+      targetId,
+    });
+
+    if (targetId === userId || !presenceStore.hasUser(targetId)) {
+      logWarn("chat.request_rejected", {
+        reason: targetId === userId ? "self_request" : "target_offline",
+        fromId: userId,
+        targetId,
+      });
+      const rejectedEvent: ChatRejectedEvent = {
+        type: "chat_rejected",
+        byId: targetId,
+      };
+      socket.send(JSON.stringify(rejectedEvent));
+      return;
+    }
+
+    if (chatStore.hasBusyUser(targetId)) {
+      logInfo("chat.request_busy", {
+        reason: "target_busy",
+        fromId: userId,
+        targetId,
+      });
+      socket.send(JSON.stringify({ type: "chat_busy", byId: targetId }));
+      return;
+    }
+
+    if (chatStore.hasBusyUser(userId)) {
+      logInfo("chat.request_busy", {
+        reason: "caller_busy",
+        fromId: userId,
+        targetId,
+      });
+      socket.send(JSON.stringify({ type: "chat_busy", byId: userId }));
+      return;
+    }
+
+    const channel = roomId(userId, targetId);
+    const busyUsers = chatStore.markChannelBusy(channel, userId, targetId);
+    logInfo("chat.invite_created", {
+      channel,
+      fromId: userId,
+      targetId,
+    });
+    publishBusyStatus(socket.publish.bind(socket), busyUsers);
+    publishPresenceSnapshot(socket.publish.bind(socket));
+    sendPresenceSnapshot(socket.send.bind(socket), {
+      userId,
+      reason: "chat_request",
+    });
+
+    socket.subscribe(channel);
+
+    const inviteEvent: ChatInviteEvent = {
+      type: "chat_invite",
+      from: presence,
+      channel,
+    };
+    socket.publish(userTopic(targetId), JSON.stringify(inviteEvent));
+    logInfo("chat.invite_sent", {
+      channel,
+      fromId: userId,
+      targetId,
+      timeoutMs: INVITE_TIMEOUT_MS,
+    });
+
+    const timer = setTimeout(() => {
+      const releasedUsers = chatStore.releaseChannel(channel);
+      logInfo("chat.invite_expired", {
+        channel,
+        fromId: userId,
+        targetId,
+      });
+
+      const expiredEvent = { type: "chat_expired", byId: targetId };
+      socket.send(JSON.stringify(expiredEvent));
+      socket.unsubscribe(channel);
+      publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+      publishPresenceSnapshot(socket.publish.bind(socket));
+      sendPresenceSnapshot(socket.send.bind(socket), {
+        userId,
+        reason: "invite_expired",
+      });
+    }, INVITE_TIMEOUT_MS);
+
+    chatStore.setInviteTimer(channel, timer);
+    return;
+  }
+
+  if (message.type === "accept_chat") {
+    const targetId = message.targetId;
+    const channel = roomId(userId, targetId);
+    const members = chatStore.getChannelMembers(channel);
+    logInfo("chat.accept_received", {
+      channel,
+      fromId: userId,
+      targetId,
+    });
+
+    if (!members?.includes(userId) || !members.includes(targetId)) {
+      logWarn("chat.accept_rejected", {
+        reason: "channel_membership_mismatch",
+        channel,
+        fromId: userId,
+        targetId,
+      });
+      return;
+    }
+
+    chatStore.clearInviteTimer(channel);
+    socket.subscribe(channel);
+
+    const readyEvent: ChatReadyEvent = { type: "chat_ready", channel };
+    socket.send(JSON.stringify(readyEvent));
+    socket.publish(channel, JSON.stringify(readyEvent));
+    logInfo("chat.ready_published", {
+      channel,
+      acceptedById: userId,
+      targetId,
+    });
+    return;
+  }
+
+  if (message.type === "reject_chat") {
+    const fromId = message.fromId;
+    const channel = roomId(userId, fromId);
+    logInfo("chat.reject_received", {
+      channel,
+      fromId,
+      rejectedById: userId,
+    });
+
+    if (chatStore.getBusyChannel(userId) !== channel) {
+      logWarn("chat.reject_ignored", {
+        reason: "user_not_in_channel",
+        channel,
+        fromId,
+        rejectedById: userId,
+      });
+      return;
+    }
+
+    const releasedUsers = chatStore.releaseChannel(channel);
+
+    const rejectedEvent: ChatRejectedEvent = {
+      type: "chat_rejected",
+      byId: userId,
+    };
+    socket.publish(userTopic(fromId), JSON.stringify(rejectedEvent));
+    publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+    publishPresenceSnapshot(socket.publish.bind(socket));
+    sendPresenceSnapshot(socket.send.bind(socket), {
+      userId,
+      reason: "chat_rejected",
+    });
+    logInfo("chat.rejected_published", {
+      channel,
+      fromId,
+      rejectedById: userId,
+    });
+    return;
+  }
+
+  if (message.type === "end_chat") {
+    const channel = message.channel;
+    logInfo("chat.end_received", {
+      channel,
+      endedById: userId,
+    });
+
+    if (chatStore.getBusyChannel(userId) !== channel) {
+      logWarn("chat.end_ignored", {
+        reason: "user_not_in_channel",
+        channel,
+        endedById: userId,
+      });
+      return;
+    }
+
+    const releasedUsers = chatStore.releaseChannel(channel);
+    const otherId = releasedUsers.find((id) => id !== userId);
+
+    if (otherId) {
+      const rejectedEvent: ChatRejectedEvent = {
+        type: "chat_rejected",
+        byId: userId,
+      };
+      socket.publish(userTopic(otherId), JSON.stringify(rejectedEvent));
+    }
+
+    publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+    publishPresenceSnapshot(socket.publish.bind(socket));
+    sendPresenceSnapshot(socket.send.bind(socket), {
+      userId,
+      reason: "chat_ended",
+    });
+    logInfo("chat.ended", {
+      channel,
+      endedById: userId,
+      otherId: otherId ?? null,
+    });
+    return;
+  }
+
+  if (chatStore.getBusyChannel(userId) !== message.channel) {
+    logWarn("chat.message_ignored", {
+      reason: "user_not_in_channel",
+      channel: message.channel,
+      fromId: userId,
+    });
+    return;
+  }
+
+  const chatEvent: ChatMessageEvent = {
+    type: "chat_message",
+    channel: message.channel,
+    fromId: userId,
+    text: message.text,
+  };
+  socket.publish(message.channel, JSON.stringify(chatEvent));
+  logInfo("chat.message_published", {
+    channel: message.channel,
+    fromId: userId,
+    textLength: message.text.length,
+  });
+};
