@@ -3,7 +3,11 @@ export interface OnlineUser {
   name: string;
 }
 
-export type ClientMessage = ChatRequestMessage | AcceptChatMessage | ChatMessagePayload;
+export type ClientMessage =
+  | ChatRequestMessage
+  | AcceptChatMessage
+  | RejectChatMessage
+  | ChatMessagePayload;
 
 export interface ChatRequestMessage {
   type: "chat_request";
@@ -13,6 +17,13 @@ export interface ChatRequestMessage {
 export interface AcceptChatMessage {
   type: "accept_chat";
   targetId: string;
+}
+
+/** Sent when the callee clicks Cancel on the invite popup. */
+export interface RejectChatMessage {
+  type: "reject_chat";
+  /** The userId of the person who sent the original chat_request. */
+  fromId: string;
 }
 
 export interface ChatMessagePayload {
@@ -45,6 +56,12 @@ export interface ChatInviteEvent {
 export interface ChatReadyEvent {
   type: "chat_ready";
   channel: string;
+}
+
+export interface ChatRejectedEvent {
+  type: "chat_rejected";
+  /** The userId of the callee who rejected. */
+  byId: string;
 }
 
 export interface ChatMessageEvent {

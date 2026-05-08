@@ -5,10 +5,12 @@ import type {
   ChatMessageEvent,
   ChatMessagePayload,
   ChatReadyEvent,
+  ChatRejectedEvent,
   ChatRequestMessage,
   ClientMessage,
   OnlineUser,
   OnlineUsersSnapshotEvent,
+  RejectChatMessage,
   UserJoinedEvent,
   UserLeftEvent,
 } from "./types";
@@ -21,13 +23,12 @@ interface OnlinePresence {
 const onlineUsers = new Map<string, OnlinePresence>();
 
 // Capture identity once per WS connection instead of re-reading query on every event.
-// WeakMap is used so entries are GC-ed automatically when the ws object is collected.
-type WsContext = { server: { ws: (path: string, options: object) => unknown } };
 const connectionIdentity = new Map<object, OnlineUser>();
 
 const roomId = (a: string, b: string) => `room:${[a, b].sort().join(":")}`;
 
-const onlineUsersSnapshot = () => Array.from(onlineUsers.values()).map((presence) => presence.user);
+const onlineUsersSnapshot = () =>
+  Array.from(onlineUsers.values()).map((p) => p.user);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -36,7 +37,6 @@ const parseClientMessage = (raw: unknown): ClientMessage | null => {
   const parsed = (() => {
     if (isRecord(raw)) return raw;
     if (typeof raw !== "string") return null;
-
     try {
       const data = JSON.parse(raw);
       return isRecord(data) ? data : null;
@@ -48,27 +48,32 @@ const parseClientMessage = (raw: unknown): ClientMessage | null => {
   if (!parsed || typeof parsed.type !== "string") return null;
 
   if (parsed.type === "chat_request") {
-    if (typeof parsed.targetId !== "string" || parsed.targetId.length === 0) return null;
-    const message: ChatRequestMessage = { type: "chat_request", targetId: parsed.targetId };
-    return message;
+    if (typeof parsed.targetId !== "string" || !parsed.targetId) return null;
+    const msg: ChatRequestMessage = { type: "chat_request", targetId: parsed.targetId };
+    return msg;
   }
 
   if (parsed.type === "accept_chat") {
-    if (typeof parsed.targetId !== "string" || parsed.targetId.length === 0) return null;
-    const message: AcceptChatMessage = { type: "accept_chat", targetId: parsed.targetId };
-    return message;
+    if (typeof parsed.targetId !== "string" || !parsed.targetId) return null;
+    const msg: AcceptChatMessage = { type: "accept_chat", targetId: parsed.targetId };
+    return msg;
+  }
+
+  if (parsed.type === "reject_chat") {
+    if (typeof parsed.fromId !== "string" || !parsed.fromId) return null;
+    const msg: RejectChatMessage = { type: "reject_chat", fromId: parsed.fromId };
+    return msg;
   }
 
   if (parsed.type === "chat_message") {
-    if (typeof parsed.channel !== "string" || parsed.channel.length === 0) return null;
+    if (typeof parsed.channel !== "string" || !parsed.channel) return null;
     if (typeof parsed.text !== "string") return null;
-
-    const message: ChatMessagePayload = {
+    const msg: ChatMessagePayload = {
       type: "chat_message",
       channel: parsed.channel,
       text: parsed.text,
     };
-    return message;
+    return msg;
   }
 
   return null;
@@ -91,12 +96,14 @@ const app = new Elysia()
       connectionIdentity.set(ws.raw, user);
 
       const previousPresence = onlineUsers.get(userId);
-      const shouldPublishJoin = !previousPresence || previousPresence.user.name !== user.name;
+      const shouldPublishJoin =
+        !previousPresence || previousPresence.user.name !== user.name;
 
       onlineUsers.set(userId, {
         user,
         connectionCount: (previousPresence?.connectionCount ?? 0) + 1,
       });
+
       ws.subscribe("online-users");
       ws.subscribe(`user:${userId}`);
 
@@ -122,6 +129,10 @@ const app = new Elysia()
       const message = parseClientMessage(rawMessage);
       if (!message) return;
 
+      // ── chat_request ──────────────────────────────────────────────────────
+      // Caller subscribes to the shared room channel, then sends an invite
+      // event to the callee's personal channel. No extra state needed on the
+      // server — the channel name is deterministic and derived from both ids.
       if (message.type === "chat_request") {
         const channel = roomId(userId, message.targetId);
         ws.subscribe(channel);
@@ -135,20 +146,34 @@ const app = new Elysia()
         return;
       }
 
+      // ── accept_chat ───────────────────────────────────────────────────────
+      // Callee subscribes to the same deterministic room channel and both
+      // sides receive the chat_ready event signalling the room is open.
       if (message.type === "accept_chat") {
         const channel = roomId(userId, message.targetId);
         ws.subscribe(channel);
 
-        const readyEvent: ChatReadyEvent = {
-          type: "chat_ready",
-          channel,
-        };
-
+        const readyEvent: ChatReadyEvent = { type: "chat_ready", channel };
         ws.send(JSON.stringify(readyEvent));
         ws.publish(channel, JSON.stringify(readyEvent));
         return;
       }
 
+      // ── reject_chat ───────────────────────────────────────────────────────
+      // Callee declined. Notify the caller via their personal channel.
+      if (message.type === "reject_chat") {
+        const rejectedEvent: ChatRejectedEvent = {
+          type: "chat_rejected",
+          byId: userId,
+        };
+        ws.publish(`user:${message.fromId}`, JSON.stringify(rejectedEvent));
+        return;
+      }
+
+      // ── chat_message ──────────────────────────────────────────────────────
+      // Publish to the shared room channel. The sender is subscribed so they
+      // also receive their own message, which lets the UI echo without a
+      // separate local state append (single source of truth).
       const chatEvent: ChatMessageEvent = {
         type: "chat_message",
         channel: message.channel,
@@ -177,10 +202,7 @@ const app = new Elysia()
 
       onlineUsers.delete(userId);
 
-      const left: UserLeftEvent = {
-        type: "user_left",
-        userId,
-      };
+      const left: UserLeftEvent = { type: "user_left", userId };
       ws.publish("online-users", JSON.stringify(left));
     },
   })
