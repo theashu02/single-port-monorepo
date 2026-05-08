@@ -20,6 +20,11 @@ interface OnlinePresence {
 
 const onlineUsers = new Map<string, OnlinePresence>();
 
+// Capture identity once per WS connection instead of re-reading query on every event.
+// WeakMap is used so entries are GC-ed automatically when the ws object is collected.
+type WsContext = { server: { ws: (path: string, options: object) => unknown } };
+const connectionIdentity = new Map<object, OnlineUser>();
+
 const roomId = (a: string, b: string) => `room:${[a, b].sort().join(":")}`;
 
 const onlineUsersSnapshot = () => Array.from(onlineUsers.values()).map((presence) => presence.user);
@@ -81,8 +86,11 @@ const app = new Elysia()
         return;
       }
 
-      const previousPresence = onlineUsers.get(userId);
+      // Store identity once — avoids re-parsing query on every message/close.
       const user: OnlineUser = { id: userId, name };
+      connectionIdentity.set(ws.raw, user);
+
+      const previousPresence = onlineUsers.get(userId);
       const shouldPublishJoin = !previousPresence || previousPresence.user.name !== user.name;
 
       onlineUsers.set(userId, {
@@ -105,10 +113,11 @@ const app = new Elysia()
     },
 
     message(ws, rawMessage) {
-      const query = ws.data.query as Record<string, string | undefined>;
-      const userId = query.userId?.trim() ?? "";
+      const identity = connectionIdentity.get(ws.raw);
+      if (!identity) return;
+      const userId = identity.id;
       const presence = onlineUsers.get(userId);
-      if (!userId || !presence) return;
+      if (!presence) return;
 
       const message = parseClientMessage(rawMessage);
       if (!message) return;
@@ -150,9 +159,10 @@ const app = new Elysia()
     },
 
     close(ws) {
-      const query = ws.data.query as Record<string, string | undefined>;
-      const userId = query.userId?.trim() ?? "";
-      if (!userId) return;
+      const identity = connectionIdentity.get(ws.raw);
+      connectionIdentity.delete(ws.raw);
+      if (!identity) return;
+      const userId = identity.id;
 
       const previousPresence = onlineUsers.get(userId);
       if (!previousPresence) return;

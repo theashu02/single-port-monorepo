@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import Image from "next/image";
 import { MessageCircle, Search, UsersRound, Wifi, WifiOff } from "lucide-react";
 import { type OnlineUser, useOnlinePresence } from "./OnlinePresenceProvider";
@@ -16,10 +16,6 @@ const statusLabels: Record<ReturnType<typeof useOnlinePresence>["status"], strin
   error: "Connection issue",
 };
 
-function avatarUrl(user: OnlineUser) {
-  const seed = encodeURIComponent(user.id || user.name);
-  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`;
-}
 
 function statusMessage(status: ReturnType<typeof useOnlinePresence>["status"], error: string | null) {
   if (status === "connected") return "Realtime presence is synced from websocket_service.";
@@ -28,12 +24,19 @@ function statusMessage(status: ReturnType<typeof useOnlinePresence>["status"], e
   return error || "Start websocket_service and this page will reconnect automatically.";
 }
 
+// Memoized: only re-renders when its own user data or interaction state changes.
 const UserCard: React.FC<{
   user: OnlineUser;
   isCurrentUser: boolean;
   canChat: boolean;
   onChat: () => void;
-}> = ({ user, isCurrentUser, canChat, onChat }) => {
+}> = memo(({ user, isCurrentUser, canChat, onChat }) => {
+  // Memoized per-card to avoid recomputing the URL string on every parent render.
+  const avatar = useMemo(() => {
+    const seed = encodeURIComponent(user.id || user.name);
+    return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`;
+  }, [user.id, user.name]);
+
   return (
     <div className="glass border border-white/10 rounded-2xl p-4 relative group overflow-hidden">
       <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-linear-to-br from-violet-500/30 to-cyan-400/20 opacity-0 group-hover:opacity-100 blur-2xl transition" />
@@ -42,7 +45,7 @@ const UserCard: React.FC<{
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-linear-to-br from-violet-500 to-cyan-400 blur-md opacity-50 group-hover:opacity-80 transition" />
           <span className="flex shrink-0 overflow-hidden rounded-full relative h-20 w-20 ring-2 ring-white/20">
-            <Image className="aspect-square h-full w-full object-cover" src={avatarUrl(user)} alt={`${user.name}'s avatar`} fill sizes="80px" />
+            <Image className="aspect-square h-full w-full object-cover" src={avatar} alt={`${user.name}'s avatar`} fill sizes="80px" />
           </span>
           <span className="pulse-ring absolute -bottom-0.5 right-1 h-4 w-4 rounded-full bg-emerald-400 ring-2 ring-[#0c0a18]" />
         </div>
@@ -67,10 +70,10 @@ const UserCard: React.FC<{
       </div>
     </div>
   );
-};
+});
 
 export const OnlinePeoplePage: React.FC = () => {
-  const { users, currentUserId, status, error, requestChat } = useOnlinePresence();
+  const { users, userCount, currentUserId, status, error, requestChat } = useOnlinePresence();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<PresenceFilter>("all");
 
@@ -98,7 +101,8 @@ export const OnlinePeoplePage: React.FC = () => {
     });
   }, [activeFilter, currentUserId, search, sortedUsers]);
 
-  const otherUsersCount = users.filter((user) => user.id !== currentUserId).length;
+  // O(1) from context instead of an O(n) filter on every render.
+  const otherUsersCount = currentUserId ? userCount - (users.some((u) => u.id === currentUserId) ? 1 : 0) : userCount;
   const isConnected = status === "connected";
   const showEmptyState = filteredUsers.length === 0;
 

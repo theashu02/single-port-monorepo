@@ -31,6 +31,7 @@ type PresenceServerEvent =
 
 interface OnlinePresenceContextValue {
   users: OnlineUser[];
+  userCount: number;
   currentUserId: string | null;
   status: PresenceStatus;
   error: string | null;
@@ -97,16 +98,24 @@ function buildWebSocketUrl(endpoint: string, identity: PresenceIdentity) {
   return url.toString();
 }
 
-function upsertUser(users: OnlineUser[], user: OnlineUser) {
-  const nextUsers = users.filter((item) => item.id !== user.id);
-  nextUsers.push(user);
-  return nextUsers;
+function upsertUser(map: Map<string, OnlineUser>, user: OnlineUser): Map<string, OnlineUser> {
+  const next = new Map(map);
+  next.set(user.id, user);
+  return next;
+}
+
+function removeUser(map: Map<string, OnlineUser>, userId: string): Map<string, OnlineUser> {
+  if (!map.has(userId)) return map; // No change — return same reference to skip re-render.
+  const next = new Map(map);
+  next.delete(userId);
+  return next;
 }
 
 export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status: sessionStatus } = useSession();
   const [identity, setIdentity] = useState<PresenceIdentity | null>(null);
-  const [users, setUsers] = useState<OnlineUser[]>([]);
+  // Map<userId, OnlineUser> — O(1) upsert/delete vs the previous filter+push O(n) approach.
+  const [usersMap, setUsersMap] = useState<Map<string, OnlineUser>>(new Map());
   const [status, setStatus] = useState<PresenceStatus>("resolving-user");
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -131,7 +140,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       const hasGuestMarker = window.localStorage.getItem(GUEST_MARKER_KEY) === "1";
       if (!hasGuestMarker) {
         setIdentity(null);
-        setUsers([]);
+        setUsersMap(new Map());
         setError(null);
         setStatus("unauthenticated");
         return;
@@ -156,7 +165,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
         if (!active) return;
         window.localStorage.removeItem(GUEST_MARKER_KEY);
         setIdentity(null);
-        setUsers([]);
+        setUsersMap(new Map());
         setError(err instanceof Error ? err.message : "Unable to resolve the current user.");
         setStatus("unauthenticated");
       }
@@ -209,16 +218,17 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
         if (!message) return;
 
         if (message.type === "online_users_snapshot") {
-          setUsers(message.users);
+          const map = new Map(message.users.map((u) => [u.id, u]));
+          setUsersMap(map);
           return;
         }
 
         if (message.type === "user_joined") {
-          setUsers((currentUsers) => upsertUser(currentUsers, message.user));
+          setUsersMap((prev) => upsertUser(prev, message.user));
           return;
         }
 
-        setUsers((currentUsers) => currentUsers.filter((user) => user.id !== message.userId));
+        setUsersMap((prev) => removeUser(prev, message.userId));
       };
 
       socket.onerror = () => {
@@ -258,15 +268,19 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
     return true;
   }, []);
 
+  // Derive stable array only when the map changes.
+  const users = useMemo(() => Array.from(usersMap.values()), [usersMap]);
+
   const value = useMemo<OnlinePresenceContextValue>(
     () => ({
       users,
+      userCount: usersMap.size,
       currentUserId: identity?.id ?? null,
       status,
       error,
       requestChat,
     }),
-    [error, identity?.id, requestChat, status, users],
+    [error, identity?.id, requestChat, status, users, usersMap.size],
   );
 
   return <OnlinePresenceContext.Provider value={value}>{children}</OnlinePresenceContext.Provider>;
