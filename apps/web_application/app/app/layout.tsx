@@ -6,6 +6,16 @@ import Sidebar, { DashboardTab } from "./components/LeftSidebar";
 import Header from "./components/Header";
 import MobileNav from "./components/MobileNav";
 import { OnlinePresenceProvider } from "./components/online-people/OnlinePresenceProvider";
+import dynamic from "next/dynamic";
+
+const ChatInvitePopup = dynamic(
+  () => import("./components/online-people/ChatInvitePopup"),
+  { ssr: false },
+);
+const ChatWindow = dynamic(
+  () => import("./components/online-people/ChatWindow"),
+  { ssr: false },
+);
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +44,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
 
         <MobileNav activeTab={activeTab} />
+        <ChatInvitePopup />
+        <ChatWindow />
       </OnlinePresenceProvider>
     </div>
   );

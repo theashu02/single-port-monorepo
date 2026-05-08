@@ -1,32 +1,52 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSession } from "next-auth/react";
 import { fetchGuestSession } from "@/core/apis/Guest_API";
-import { useAppDispatch } from "@/lib/redux/hooks";
-import { chatBusy, chatExpired, chatReady, chatRejected, inviteReceived, messageReceived } from "@/lib/redux/slices/chatSlice";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  chatBusy,
+  chatExpired,
+  chatReady,
+  chatRejected,
+  inviteReceived,
+  messageReceived,
+} from "@/lib/redux/slices/chatSlice";
+import {
+  onlineUsersSnapshotReceived,
+  presenceIdentityChanged,
+  presenceReset,
+  presenceStatusChanged,
+  selectCurrentUserId,
+  selectOnlineUsers,
+  selectPresenceError,
+  selectPresenceStatus,
+  selectUserCount,
+  userBusyChanged,
+  userJoinedReceived,
+  userLeftReceived,
+  type OnlineUser,
+  type PresenceStatus,
+} from "@/lib/redux/slices/presenceSlice";
+
+export type {
+  OnlineUser,
+  PresenceStatus,
+} from "@/lib/redux/slices/presenceSlice";
 
 const GUEST_MARKER_KEY = "guest_session_present";
 const DEFAULT_WS_ENDPOINT = "ws://localhost:3001/ws";
+const SOCKET_REPLACED_CODE = 4000;
 
-// ── Public types ─────────────────────────────────────────────────────────────
-
-export interface OnlineUser {
-  id: string;
-  name: string;
-  isBusy: boolean;
-}
-
-export type PresenceStatus = "resolving-user" | "unauthenticated" | "connecting" | "connected" | "disconnected" | "error";
-
-interface OnlinePresenceContextValue {
-  // presence
-  users: OnlineUser[];
-  userCount: number;
-  currentUserId: string | null;
-  status: PresenceStatus;
-  error: string | null;
-  // chat actions — all reuse the single socket, return false if not connected
+interface OnlinePresenceActions {
   requestChat: (targetId: string) => boolean;
   acceptChat: (fromId: string) => boolean;
   rejectChat: (fromId: string) => boolean;
@@ -34,21 +54,37 @@ interface OnlinePresenceContextValue {
   endChat: (channel: string) => boolean;
 }
 
-// ── Context ───────────────────────────────────────────────────────────────────
+interface OnlinePresenceContextValue extends OnlinePresenceActions {
+  users: OnlineUser[];
+  userCount: number;
+  currentUserId: string | null;
+  status: PresenceStatus;
+  error: string | null;
+}
 
-const OnlinePresenceContext = createContext<OnlinePresenceContextValue | null>(null);
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const OnlinePresenceActionsContext =
+  createContext<OnlinePresenceActions | null>(null);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
 function parseOnlineUser(value: unknown): OnlineUser | null {
-  if (!isRecord(value) || typeof value.id !== "string" || typeof value.name !== "string") return null;
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.name !== "string"
+  )
+    return null;
   const id = value.id.trim();
   const name = value.name.trim();
   return id && name ? { id, name, isBusy: value.isBusy === true } : null;
+}
+
+function parseNonEmptyString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
 }
 
 type ServerEvent =
@@ -76,7 +112,9 @@ function parseServerEvent(raw: string): ServerEvent | null {
   switch (parsed.type) {
     case "online_users_snapshot": {
       if (!Array.isArray(parsed.users)) return null;
-      const users = parsed.users.map(parseOnlineUser).filter((u): u is OnlineUser => u !== null);
+      const users = parsed.users
+        .map(parseOnlineUser)
+        .filter((user): user is OnlineUser => user !== null);
       return { type: "online_users_snapshot", users };
     }
     case "user_joined": {
@@ -84,44 +122,40 @@ function parseServerEvent(raw: string): ServerEvent | null {
       return user ? { type: "user_joined", user } : null;
     }
     case "user_left": {
-      if (typeof parsed.userId !== "string") return null;
-      const userId = parsed.userId.trim();
+      const userId = parseNonEmptyString(parsed.userId);
       return userId ? { type: "user_left", userId } : null;
     }
     case "user_status_changed": {
-      if (typeof parsed.userId !== "string" || typeof parsed.isBusy !== "boolean") return null;
-      const userId = parsed.userId.trim();
-      return userId ? { type: "user_status_changed", userId, isBusy: parsed.isBusy } : null;
+      const userId = parseNonEmptyString(parsed.userId);
+      if (!userId || typeof parsed.isBusy !== "boolean") return null;
+      return { type: "user_status_changed", userId, isBusy: parsed.isBusy };
     }
     case "chat_invite": {
       const from = parseOnlineUser(parsed.from);
-      if (!from || typeof parsed.channel !== "string") return null;
-      return { type: "chat_invite", from, channel: parsed.channel };
+      const channel = parseNonEmptyString(parsed.channel);
+      return from && channel ? { type: "chat_invite", from, channel } : null;
     }
     case "chat_ready": {
-      if (typeof parsed.channel !== "string") return null;
-      return { type: "chat_ready", channel: parsed.channel };
+      const channel = parseNonEmptyString(parsed.channel);
+      return channel ? { type: "chat_ready", channel } : null;
     }
     case "chat_rejected": {
-      if (typeof parsed.byId !== "string") return null;
-      return { type: "chat_rejected", byId: parsed.byId };
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_rejected", byId } : null;
     }
     case "chat_busy": {
-      if (typeof parsed.byId !== "string") return null;
-      return { type: "chat_busy", byId: parsed.byId };
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_busy", byId } : null;
     }
     case "chat_expired": {
-      if (typeof parsed.byId !== "string") return null;
-      return { type: "chat_expired", byId: parsed.byId };
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_expired", byId } : null;
     }
     case "chat_message": {
-      if (typeof parsed.channel !== "string" || typeof parsed.fromId !== "string" || typeof parsed.text !== "string") return null;
-      return {
-        type: "chat_message",
-        channel: parsed.channel,
-        fromId: parsed.fromId,
-        text: parsed.text,
-      };
+      const channel = parseNonEmptyString(parsed.channel);
+      const fromId = parseNonEmptyString(parsed.fromId);
+      if (!channel || !fromId || typeof parsed.text !== "string") return null;
+      return { type: "chat_message", channel, fromId, text: parsed.text };
     }
     default:
       return null;
@@ -137,87 +171,86 @@ function buildWebSocketUrl(endpoint: string, id: string, name: string): string {
   return url.toString();
 }
 
-function upsertUser(map: Map<string, OnlineUser>, user: OnlineUser): Map<string, OnlineUser> {
-  const current = map.get(user.id);
-  if (current && current.name === user.name && current.isBusy === user.isBusy) return map;
-  const next = new Map(map);
-  next.set(user.id, user);
-  return next;
+type Identity = { id: string; name: string };
+
+function isSameIdentity(left: Identity | null, right: Identity): boolean {
+  return left?.id === right.id && left.name === right.name;
 }
 
-function removeUser(map: Map<string, OnlineUser>, userId: string): Map<string, OnlineUser> {
-  if (!map.has(userId)) return map; // same ref → no re-render
-  const next = new Map(map);
-  next.delete(userId);
-  return next;
+function createClientMessageId(fromId: string, ts: number): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  return `${fromId}-${ts}-${Math.random().toString(36).slice(2)}`;
 }
 
-function updateUserBusy(map: Map<string, OnlineUser>, userId: string, isBusy: boolean): Map<string, OnlineUser> {
-  const user = map.get(userId);
-  if (!user || user.isBusy === isBusy) return map;
-  const next = new Map(map);
-  next.set(userId, { ...user, isBusy });
-  return next;
-}
-
-// ── Provider ──────────────────────────────────────────────────────────────────
-
-export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
+export function OnlinePresenceProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data: session, status: sessionStatus } = useSession();
   const dispatch = useAppDispatch();
-
-  type Identity = { id: string; name: string };
   const [identity, setIdentity] = useState<Identity | null>(null);
-  const [usersMap, setUsersMap] = useState<Map<string, OnlineUser>>(new Map());
-  const [status, setStatus] = useState<PresenceStatus>("resolving-user");
-  const [error, setError] = useState<string | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
-  /**
-   * Stable ref to the Redux dispatch function.
-   * Using a ref means the onmessage closure never becomes stale —
-   * we never need to recreate the socket just because dispatch changed identity.
-   */
   const dispatchRef = useRef(dispatch);
+
   useEffect(() => {
     dispatchRef.current = dispatch;
-  });
-
-  // ── Identity resolution ──────────────────────────────────────────────────
+  }, [dispatch]);
 
   useEffect(() => {
     let active = true;
 
+    const commitIdentity = (nextIdentity: Identity) => {
+      if (!active) return;
+      setIdentity((current) =>
+        isSameIdentity(current, nextIdentity) ? current : nextIdentity,
+      );
+      dispatch(presenceIdentityChanged(nextIdentity.id));
+    };
+
     async function resolveIdentity() {
       if (sessionStatus === "loading") {
-        setStatus("resolving-user");
+        dispatch(
+          presenceStatusChanged({ status: "resolving-user", error: null }),
+        );
         return;
       }
 
       const sessionUserId = session?.user?.id?.trim();
       if (sessionUserId) {
-        const name = session?.user?.name?.trim() || session?.user?.email?.split("@")[0]?.trim() || "User";
-        if (active) setIdentity({ id: `user:${sessionUserId}`, name });
+        const name =
+          session?.user?.name?.trim() ||
+          session?.user?.email?.split("@")[0]?.trim() ||
+          "User";
+        commitIdentity({ id: `user:${sessionUserId}`, name });
         return;
       }
 
-      const hasGuestMarker = window.localStorage.getItem(GUEST_MARKER_KEY) === "1";
+      const hasGuestMarker =
+        window.localStorage.getItem(GUEST_MARKER_KEY) === "1";
       if (!hasGuestMarker) {
+        if (!active) return;
         setIdentity(null);
-        setUsersMap(new Map());
-        setError(null);
-        setStatus("unauthenticated");
+        dispatch(presenceReset({ status: "unauthenticated", error: null }));
         return;
       }
 
-      setStatus("resolving-user");
+      dispatch(
+        presenceStatusChanged({ status: "resolving-user", error: null }),
+      );
 
       try {
         const guest = await fetchGuestSession();
         if (!active) return;
         const guestId = guest.guest_id?.trim();
         if (!guestId) throw new Error("Guest session is missing an id.");
-        setIdentity({
+        commitIdentity({
           id: `guest:${guestId}`,
           name: guest.nickname?.trim() || "Guest",
         });
@@ -225,19 +258,30 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
         if (!active) return;
         window.localStorage.removeItem(GUEST_MARKER_KEY);
         setIdentity(null);
-        setUsersMap(new Map());
-        setError(err instanceof Error ? err.message : "Unable to resolve the current user.");
-        setStatus("unauthenticated");
+        dispatch(
+          presenceReset({
+            status: "unauthenticated",
+            error:
+              err instanceof Error
+                ? err.message
+                : "Unable to resolve the current user.",
+          }),
+        );
       }
     }
 
     void resolveIdentity();
+
     return () => {
       active = false;
     };
-  }, [session?.user?.email, session?.user?.id, session?.user?.name, sessionStatus]);
-
-  // ── WebSocket lifecycle ──────────────────────────────────────────────────
+  }, [
+    dispatch,
+    session?.user?.email,
+    session?.user?.id,
+    session?.user?.name,
+    sessionStatus,
+  ]);
 
   useEffect(() => {
     if (!identity) {
@@ -251,95 +295,130 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
     let reconnectTimer: number | undefined;
 
     const connect = () => {
-      const endpoint = process.env.NEXT_PUBLIC_WEBSOCKET_URL || DEFAULT_WS_ENDPOINT;
+      const endpoint =
+        process.env.NEXT_PUBLIC_WEBSOCKET_URL || DEFAULT_WS_ENDPOINT;
       let socket: WebSocket;
 
       try {
-        socket = new WebSocket(buildWebSocketUrl(endpoint, identity.id, identity.name));
+        socket = new WebSocket(
+          buildWebSocketUrl(endpoint, identity.id, identity.name),
+        );
       } catch (err) {
-        setStatus("error");
-        setError(err instanceof Error ? err.message : "Invalid websocket endpoint.");
+        dispatch(
+          presenceStatusChanged({
+            status: "error",
+            error:
+              err instanceof Error
+                ? err.message
+                : "Invalid websocket endpoint.",
+          }),
+        );
         return;
       }
 
       socketRef.current = socket;
-      setStatus("connecting");
-      setError(null);
+      dispatch(presenceStatusChanged({ status: "connecting", error: null }));
 
       socket.onopen = () => {
         reconnectAttempts = 0;
-        setStatus("connected");
-        setError(null);
+        dispatch(presenceStatusChanged({ status: "connected", error: null }));
       };
 
-      /**
-       * THE MULTIPLEXER — single handler, zero subscriptions to manage.
-       *
-       * Presence events → React local state (setUsersMap).
-       * Chat events    → Redux dispatch (synchronous, no re-subscription race).
-       *
-       * Using dispatchRef so the closure is always current without recreating
-       * the socket when dispatch identity changes.
-       */
       socket.onmessage = (event) => {
         if (typeof event.data !== "string") return;
         const msg = parseServerEvent(event.data);
         if (!msg) return;
 
         switch (msg.type) {
-          // ── Presence ───────────────────────────────────────────────────
           case "online_users_snapshot":
-            setUsersMap(new Map(msg.users.map((u) => [u.id, u])));
+            dispatchRef.current(onlineUsersSnapshotReceived(msg.users));
             return;
           case "user_joined":
-            setUsersMap((prev) => upsertUser(prev, msg.user));
+            dispatchRef.current(userJoinedReceived(msg.user));
             return;
           case "user_left":
-            setUsersMap((prev) => removeUser(prev, msg.userId));
+            dispatchRef.current(userLeftReceived(msg.userId));
             return;
           case "user_status_changed":
-            setUsersMap((prev) => updateUserBusy(prev, msg.userId, msg.isBusy));
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.userId, isBusy: msg.isBusy }),
+            );
             return;
-
-          // ── Chat (dispatched directly → zero latency) ──────────────────
           case "chat_invite":
-            dispatchRef.current(inviteReceived({ from: msg.from, channel: msg.channel }));
+            dispatchRef.current(
+              inviteReceived({ from: msg.from, channel: msg.channel }),
+            );
             return;
           case "chat_ready":
             dispatchRef.current(chatReady({ channel: msg.channel }));
             return;
           case "chat_rejected":
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.byId, isBusy: false }),
+            );
+            dispatchRef.current(
+              userBusyChanged({ userId: identity.id, isBusy: false }),
+            );
             dispatchRef.current(chatRejected());
             return;
           case "chat_busy":
             dispatchRef.current(chatBusy());
             return;
           case "chat_expired":
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.byId, isBusy: false }),
+            );
+            dispatchRef.current(
+              userBusyChanged({ userId: identity.id, isBusy: false }),
+            );
             dispatchRef.current(chatExpired());
             return;
-          case "chat_message":
+          case "chat_message": {
+            const ts = Date.now();
             dispatchRef.current(
               messageReceived({
+                id: createClientMessageId(msg.fromId, ts),
                 channel: msg.channel,
                 fromId: msg.fromId,
                 text: msg.text,
-                ts: Date.now(),
+                ts,
               }),
             );
             return;
+          }
         }
       };
 
       socket.onerror = () => {
-        setError("Unable to reach the websocket service.");
+        dispatch(
+          presenceStatusChanged({
+            status: "error",
+            error: "Unable to reach the websocket service.",
+          }),
+        );
       };
 
       socket.onclose = (event) => {
         if (socketRef.current === socket) socketRef.current = null;
         if (closedByEffect) return;
 
-        setStatus(event.code === 1008 ? "error" : "disconnected");
-        setError(event.reason || "Websocket connection closed.");
+        const isAuthFailure = event.code === 1008;
+        const isReplacedSocket = event.code === SOCKET_REPLACED_CODE;
+        const error =
+          event.reason ||
+          (isReplacedSocket
+            ? "Another active socket is already connected for this user."
+            : "Websocket connection closed.");
+
+        dispatch(
+          presenceStatusChanged({
+            status: isAuthFailure ? "error" : "disconnected",
+            error,
+          }),
+        );
+        dispatch(chatRejected());
+
+        if (isAuthFailure || isReplacedSocket) return;
 
         const delay = Math.min(1000 * 2 ** reconnectAttempts, 5000);
         reconnectAttempts += 1;
@@ -355,9 +434,7 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       socketRef.current?.close(1000, "Presence provider remounted");
       socketRef.current = null;
     };
-  }, [identity]);
-
-  // ── Socket send helpers — stable refs, never cause re-renders ────────────
+  }, [dispatch, identity]);
 
   const send = useCallback((payload: object): boolean => {
     if (socketRef.current?.readyState !== WebSocket.OPEN) return false;
@@ -365,43 +442,77 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
     return true;
   }, []);
 
-  const requestChat = useCallback((targetId: string) => send({ type: "chat_request", targetId }), [send]);
+  const requestChat = useCallback(
+    (targetId: string) => send({ type: "chat_request", targetId }),
+    [send],
+  );
 
-  const acceptChat = useCallback((fromId: string) => send({ type: "accept_chat", targetId: fromId }), [send]);
+  const acceptChat = useCallback(
+    (fromId: string) => send({ type: "accept_chat", targetId: fromId }),
+    [send],
+  );
 
-  const rejectChat = useCallback((fromId: string) => send({ type: "reject_chat", fromId }), [send]);
+  const rejectChat = useCallback(
+    (fromId: string) => send({ type: "reject_chat", fromId }),
+    [send],
+  );
 
-  const sendMessage = useCallback((channel: string, text: string) => send({ type: "chat_message", channel, text }), [send]);
+  const sendMessage = useCallback(
+    (channel: string, text: string) =>
+      send({ type: "chat_message", channel, text }),
+    [send],
+  );
 
-  const endChat = useCallback((channel: string) => send({ type: "end_chat", channel }), [send]);
+  const endChat = useCallback(
+    (channel: string) => send({ type: "end_chat", channel }),
+    [send],
+  );
 
-  // ── Derived state ────────────────────────────────────────────────────────
-
-  const users = useMemo(() => Array.from(usersMap.values()), [usersMap]);
-
-  const value = useMemo<OnlinePresenceContextValue>(
+  const actions = useMemo<OnlinePresenceActions>(
     () => ({
-      users,
-      userCount: usersMap.size,
-      currentUserId: identity?.id ?? null,
-      status,
-      error,
       requestChat,
       acceptChat,
       rejectChat,
       sendMessage,
       endChat,
     }),
-    [users, usersMap.size, identity?.id, status, error, requestChat, acceptChat, rejectChat, sendMessage, endChat],
+    [acceptChat, endChat, rejectChat, requestChat, sendMessage],
   );
 
-  return <OnlinePresenceContext.Provider value={value}>{children}</OnlinePresenceContext.Provider>;
+  return (
+    <OnlinePresenceActionsContext.Provider value={actions}>
+      {children}
+    </OnlinePresenceActionsContext.Provider>
+  );
 }
 
-export function useOnlinePresence() {
-  const context = useContext(OnlinePresenceContext);
+export function useOnlinePresenceActions() {
+  const context = useContext(OnlinePresenceActionsContext);
   if (!context) {
-    throw new Error("useOnlinePresence must be used within OnlinePresenceProvider");
+    throw new Error(
+      "useOnlinePresenceActions must be used within OnlinePresenceProvider",
+    );
   }
   return context;
+}
+
+export function useOnlinePresence(): OnlinePresenceContextValue {
+  const actions = useOnlinePresenceActions();
+  const users = useAppSelector(selectOnlineUsers);
+  const userCount = useAppSelector(selectUserCount);
+  const currentUserId = useAppSelector(selectCurrentUserId);
+  const status = useAppSelector(selectPresenceStatus);
+  const error = useAppSelector(selectPresenceError);
+
+  return useMemo(
+    () => ({
+      users,
+      userCount,
+      currentUserId,
+      status,
+      error,
+      ...actions,
+    }),
+    [actions, currentUserId, error, status, userCount, users],
+  );
 }

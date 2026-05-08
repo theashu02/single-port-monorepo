@@ -96,14 +96,20 @@ const chatSlice = createSlice({
      */
     messageReceived(
       state,
-      action: PayloadAction<{ channel: string; fromId: string; text: string; ts: number }>,
+      action: PayloadAction<{
+        id: string;
+        channel: string;
+        fromId: string;
+        text: string;
+        ts: number;
+      }>,
     ) {
-      const { channel, fromId, text, ts } = action.payload;
+      const { id, channel, fromId, text, ts } = action.payload;
       if (!state.messagesByChannel[channel]) {
         state.messagesByChannel[channel] = [];
       }
       state.messagesByChannel[channel].push({
-        id: `${fromId}-${ts}-${Math.random().toString(36).slice(2)}`,
+        id,
         fromId,
         text,
         ts,
@@ -114,7 +120,11 @@ const chatSlice = createSlice({
      * Server sent chat_rejected — the peer declined our request.
      */
     chatRejected(state) {
-      if (state.phase === "awaiting-accept" || state.phase === "open") {
+      if (
+        state.phase === "awaiting-accept" ||
+        state.phase === "incoming-invite" ||
+        state.phase === "open"
+      ) {
         const channel = state.channel;
         if (channel) {
           if (!state.messagesByChannel[channel]) {
@@ -182,5 +192,10 @@ import type { RootState } from "../store";
 export const selectChatPhase = (s: RootState) => s.chat.phase;
 export const selectChatPeer = (s: RootState) => s.chat.peer;
 export const selectChatChannel = (s: RootState) => s.chat.channel;
-export const selectChannelMessages = (channel: string | null) => (s: RootState) =>
-  channel ? (s.chat.messagesByChannel[channel] ?? []) : [];
+export const selectIsLocalChatLocked = (s: RootState) =>
+  s.chat.phase === "awaiting-accept" ||
+  s.chat.phase === "incoming-invite" ||
+  s.chat.phase === "open";
+export const selectChannelMessages =
+  (channel: string | null) => (s: RootState) =>
+    channel ? (s.chat.messagesByChannel[channel] ?? []) : [];
