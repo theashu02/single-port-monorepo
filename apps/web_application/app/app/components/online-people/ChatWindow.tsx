@@ -61,7 +61,7 @@ const ChatWindow: React.FC = memo(() => {
   const channel = useAppSelector(selectChatChannel);
   // Selector is stable because channel is memoized in the slice
   const messages = useAppSelector(selectChannelMessages(channel));
-  const { sendMessage, currentUserId } = useOnlinePresence();
+  const { sendMessage, endChat, currentUserId } = useOnlinePresence();
 
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -89,8 +89,9 @@ const ChatWindow: React.FC = memo(() => {
   );
 
   const handleClose = useCallback(() => {
+    if (channel) endChat(channel);
     dispatch(chatClosed());
-  }, [dispatch]);
+  }, [channel, dispatch, endChat]);
 
   if (phase !== "open" || !peer || !channel) return null;
 

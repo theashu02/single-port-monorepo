@@ -23,7 +23,11 @@ export type ChatPhase =
   /** Incoming invite waiting for local user to accept/decline. */
   | "incoming-invite"
   /** Both sides accepted — chat window is open. */
-  | "open";
+  | "open"
+  /** The target user is already in another chat. */
+  | "busy"
+  /** The invite timed out. */
+  | "expired";
 
 export interface ChatState {
   phase: ChatPhase;
@@ -110,23 +114,40 @@ const chatSlice = createSlice({
      * Server sent chat_rejected — the peer declined our request.
      */
     chatRejected(state) {
-      if (state.phase === "awaiting-accept") {
-        // Surface rejection in the message list as a system message.
-        if (state.channel) {
-          const channel = state.channel;
+      if (state.phase === "awaiting-accept" || state.phase === "open") {
+        const channel = state.channel;
+        if (channel) {
           if (!state.messagesByChannel[channel]) {
             state.messagesByChannel[channel] = [];
           }
           state.messagesByChannel[channel].push({
             id: `__rejected__${Date.now()}`,
             fromId: "__system__",
-            text: "The user declined your chat request.",
+            text: "The conversation has ended.",
             ts: Date.now(),
           });
         }
         state.phase = "idle";
         state.peer = null;
         state.channel = null;
+      }
+    },
+
+    /**
+     * Server sent chat_busy — the target user is already in a chat.
+     */
+    chatBusy(state) {
+      if (state.phase === "awaiting-accept") {
+        state.phase = "busy";
+      }
+    },
+
+    /**
+     * Server sent chat_expired — the invite timed out.
+     */
+    chatExpired(state) {
+      if (state.phase === "awaiting-accept") {
+        state.phase = "expired";
       }
     },
 
@@ -147,6 +168,8 @@ export const {
   chatReady,
   messageReceived,
   chatRejected,
+  chatBusy,
+  chatExpired,
   chatClosed,
 } = chatSlice.actions;
 

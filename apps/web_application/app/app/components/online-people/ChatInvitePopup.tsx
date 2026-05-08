@@ -63,21 +63,13 @@ const ChatInvitePopup: React.FC = memo(() => {
 
             <div className="mt-6 flex gap-3">
               {/* Reject */}
-              <Button
-                type="button"
-                onClick={handleReject}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-white/70 hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              >
+              <Button type="button" onClick={handleReject} className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-white/70 hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30">
                 <X className="h-4 w-4" aria-hidden="true" />
                 Decline
               </Button>
 
               {/* Accept */}
-              <Button
-                type="button"
-                onClick={handleAccept}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 text-sm font-bold text-white shadow-lg shadow-violet-500/30 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-              >
+              <Button type="button" onClick={handleAccept} className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 text-sm font-bold text-white shadow-lg shadow-violet-500/30 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
                 <Phone className="h-4 w-4" aria-hidden="true" />
                 Accept
               </Button>

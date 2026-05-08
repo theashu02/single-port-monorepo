@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useSession } from "next-auth/react";
 import { fetchGuestSession } from "@/core/apis/Guest_API";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { chatReady, chatRejected, inviteReceived, messageReceived } from "@/lib/redux/slices/chatSlice";
+import { chatBusy, chatExpired, chatReady, chatRejected, inviteReceived, messageReceived } from "@/lib/redux/slices/chatSlice";
 
 const GUEST_MARKER_KEY = "guest_session_present";
 const DEFAULT_WS_ENDPOINT = "ws://localhost:3001/ws";
@@ -14,6 +14,7 @@ const DEFAULT_WS_ENDPOINT = "ws://localhost:3001/ws";
 export interface OnlineUser {
   id: string;
   name: string;
+  isBusy: boolean;
 }
 
 export type PresenceStatus = "resolving-user" | "unauthenticated" | "connecting" | "connected" | "disconnected" | "error";
@@ -30,6 +31,7 @@ interface OnlinePresenceContextValue {
   acceptChat: (fromId: string) => boolean;
   rejectChat: (fromId: string) => boolean;
   sendMessage: (channel: string, text: string) => boolean;
+  endChat: (channel: string) => boolean;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -46,16 +48,19 @@ function parseOnlineUser(value: unknown): OnlineUser | null {
   if (!isRecord(value) || typeof value.id !== "string" || typeof value.name !== "string") return null;
   const id = value.id.trim();
   const name = value.name.trim();
-  return id && name ? { id, name } : null;
+  return id && name ? { id, name, isBusy: value.isBusy === true } : null;
 }
 
 type ServerEvent =
   | { type: "online_users_snapshot"; users: OnlineUser[] }
   | { type: "user_joined"; user: OnlineUser }
   | { type: "user_left"; userId: string }
+  | { type: "user_status_changed"; userId: string; isBusy: boolean }
   | { type: "chat_invite"; from: OnlineUser; channel: string }
   | { type: "chat_ready"; channel: string }
   | { type: "chat_rejected"; byId: string }
+  | { type: "chat_busy"; byId: string }
+  | { type: "chat_expired"; byId: string }
   | { type: "chat_message"; channel: string; fromId: string; text: string };
 
 function parseServerEvent(raw: string): ServerEvent | null {
@@ -83,6 +88,11 @@ function parseServerEvent(raw: string): ServerEvent | null {
       const userId = parsed.userId.trim();
       return userId ? { type: "user_left", userId } : null;
     }
+    case "user_status_changed": {
+      if (typeof parsed.userId !== "string" || typeof parsed.isBusy !== "boolean") return null;
+      const userId = parsed.userId.trim();
+      return userId ? { type: "user_status_changed", userId, isBusy: parsed.isBusy } : null;
+    }
     case "chat_invite": {
       const from = parseOnlineUser(parsed.from);
       if (!from || typeof parsed.channel !== "string") return null;
@@ -95,6 +105,14 @@ function parseServerEvent(raw: string): ServerEvent | null {
     case "chat_rejected": {
       if (typeof parsed.byId !== "string") return null;
       return { type: "chat_rejected", byId: parsed.byId };
+    }
+    case "chat_busy": {
+      if (typeof parsed.byId !== "string") return null;
+      return { type: "chat_busy", byId: parsed.byId };
+    }
+    case "chat_expired": {
+      if (typeof parsed.byId !== "string") return null;
+      return { type: "chat_expired", byId: parsed.byId };
     }
     case "chat_message": {
       if (typeof parsed.channel !== "string" || typeof parsed.fromId !== "string" || typeof parsed.text !== "string") return null;
@@ -120,6 +138,8 @@ function buildWebSocketUrl(endpoint: string, id: string, name: string): string {
 }
 
 function upsertUser(map: Map<string, OnlineUser>, user: OnlineUser): Map<string, OnlineUser> {
+  const current = map.get(user.id);
+  if (current && current.name === user.name && current.isBusy === user.isBusy) return map;
   const next = new Map(map);
   next.set(user.id, user);
   return next;
@@ -129,6 +149,14 @@ function removeUser(map: Map<string, OnlineUser>, userId: string): Map<string, O
   if (!map.has(userId)) return map; // same ref → no re-render
   const next = new Map(map);
   next.delete(userId);
+  return next;
+}
+
+function updateUserBusy(map: Map<string, OnlineUser>, userId: string, isBusy: boolean): Map<string, OnlineUser> {
+  const user = map.get(userId);
+  if (!user || user.isBusy === isBusy) return map;
+  const next = new Map(map);
+  next.set(userId, { ...user, isBusy });
   return next;
 }
 
@@ -269,6 +297,9 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
           case "user_left":
             setUsersMap((prev) => removeUser(prev, msg.userId));
             return;
+          case "user_status_changed":
+            setUsersMap((prev) => updateUserBusy(prev, msg.userId, msg.isBusy));
+            return;
 
           // ── Chat (dispatched directly → zero latency) ──────────────────
           case "chat_invite":
@@ -279,6 +310,12 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
             return;
           case "chat_rejected":
             dispatchRef.current(chatRejected());
+            return;
+          case "chat_busy":
+            dispatchRef.current(chatBusy());
+            return;
+          case "chat_expired":
+            dispatchRef.current(chatExpired());
             return;
           case "chat_message":
             dispatchRef.current(
@@ -336,6 +373,8 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
 
   const sendMessage = useCallback((channel: string, text: string) => send({ type: "chat_message", channel, text }), [send]);
 
+  const endChat = useCallback((channel: string) => send({ type: "end_chat", channel }), [send]);
+
   // ── Derived state ────────────────────────────────────────────────────────
 
   const users = useMemo(() => Array.from(usersMap.values()), [usersMap]);
@@ -351,8 +390,9 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       acceptChat,
       rejectChat,
       sendMessage,
+      endChat,
     }),
-    [users, usersMap.size, identity?.id, status, error, requestChat, acceptChat, rejectChat, sendMessage],
+    [users, usersMap.size, identity?.id, status, error, requestChat, acceptChat, rejectChat, sendMessage, endChat],
   );
 
   return <OnlinePresenceContext.Provider value={value}>{children}</OnlinePresenceContext.Provider>;

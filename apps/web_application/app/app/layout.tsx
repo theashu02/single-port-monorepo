@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Sidebar, { DashboardTab } from "./components/LeftSidebar";
 import Header from "./components/Header";
 import MobileNav from "./components/MobileNav";
-import { OnlinePresenceProvider } from "./components/OnlinePresenceProvider";
+import { OnlinePresenceProvider } from "./components/online-people/OnlinePresenceProvider";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -30,9 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 flex flex-col min-w-0 h-full relative">
           <Header activeTab={activeTab} />
 
-          <div className="flex-1 min-h-0 overflow-auto w-full">
-            {children}
-          </div>
+          <div className="flex-1 min-h-0 overflow-auto w-full">{children}</div>
         </main>
 
         <MobileNav activeTab={activeTab} />

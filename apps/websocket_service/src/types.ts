@@ -3,11 +3,16 @@ export interface OnlineUser {
   name: string;
 }
 
+export interface OnlinePresenceUser extends OnlineUser {
+  isBusy: boolean;
+}
+
 export type ClientMessage =
   | ChatRequestMessage
   | AcceptChatMessage
   | RejectChatMessage
-  | ChatMessagePayload;
+  | ChatMessagePayload
+  | EndChatMessage;
 
 export interface ChatRequestMessage {
   type: "chat_request";
@@ -32,19 +37,30 @@ export interface ChatMessagePayload {
   text: string;
 }
 
+export interface EndChatMessage {
+  type: "end_chat";
+  channel: string;
+}
+
 export interface OnlineUsersSnapshotEvent {
   type: "online_users_snapshot";
-  users: OnlineUser[];
+  users: OnlinePresenceUser[];
 }
 
 export interface UserJoinedEvent {
   type: "user_joined";
-  user: OnlineUser;
+  user: OnlinePresenceUser;
 }
 
 export interface UserLeftEvent {
   type: "user_left";
   userId: string;
+}
+
+export interface UserStatusChangedEvent {
+  type: "user_status_changed";
+  userId: string;
+  isBusy: boolean;
 }
 
 export interface ChatInviteEvent {
@@ -61,6 +77,18 @@ export interface ChatReadyEvent {
 export interface ChatRejectedEvent {
   type: "chat_rejected";
   /** The userId of the callee who rejected. */
+  byId: string;
+}
+
+export interface ChatBusyEvent {
+  type: "chat_busy";
+  /** The userId of the busy callee. */
+  byId: string;
+}
+
+export interface ChatExpiredEvent {
+  type: "chat_expired";
+  /** The userId of the callee who didn't respond in time. */
   byId: string;
 }
 
