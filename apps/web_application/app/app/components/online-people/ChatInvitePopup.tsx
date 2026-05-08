@@ -1,24 +1,15 @@
 "use client";
 
 import React, { memo, useCallback } from "react";
-import { MessageCircle, Phone, X } from "lucide-react";
+import { Phone, User, X } from "lucide-react";
 import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  chatClosed,
-  chatRequested,
-  selectChatPeer,
-  selectChatPhase,
-} from "@/lib/redux/slices/chatSlice";
+import { chatClosed, chatRequested, selectChatPeer, selectChatPhase } from "@/lib/redux/slices/chatSlice";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-/**
- * Reads incoming invite state directly from Redux — zero prop drilling,
- * zero useEffect subscriptions. Renders only when phase === "incoming-invite".
- *
- * The single WebSocket in OnlinePresenceProvider dispatches inviteReceived
- * synchronously in onmessage, so this popup appears with zero extra latency.
- */
 const ChatInvitePopup: React.FC = memo(() => {
   const dispatch = useAppDispatch();
   const phase = useAppSelector(selectChatPhase);
@@ -29,9 +20,6 @@ const ChatInvitePopup: React.FC = memo(() => {
     if (!peer) return;
     const sent = acceptChat(peer.id);
     if (!sent) return;
-    // chatReady will be dispatched by OnlinePresenceProvider when server responds.
-    // chatRequested is used here only to record ourselves as the "accepter" peer
-    // so that when chat_ready fires, the Redux state has the full peer object.
     dispatch(chatRequested(peer));
   }, [acceptChat, dispatch, peer]);
 
@@ -44,65 +32,52 @@ const ChatInvitePopup: React.FC = memo(() => {
   if (phase !== "incoming-invite" || !peer) return null;
 
   return (
-    // Backdrop
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4 pointer-events-none">
-      <div
-        className="pointer-events-auto w-full max-w-sm animate-in slide-in-from-bottom-4 fade-in duration-300"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Chat request from ${peer.name}`}
-      >
-        {/* Card */}
-        <div className="relative rounded-3xl overflow-hidden border border-white/10 glass p-6 shadow-2xl">
-          {/* Decorative blurs */}
-          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-violet-500/30 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+    <div className="fixed inset-x-0 bottom-6 z-50 flex items-center justify-center px-4 pointer-events-none">
+      <Card className="pointer-events-auto w-full max-w-[380px] overflow-hidden border-white/20 bg-background/60 backdrop-blur-xl shadow-2xl animate-in slide-in-from-bottom-8 fade-in duration-500 zoom-in-95 rounded-md">
+        <CardContent className="p-0">
+          <div className="h-1.5 w-full bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
 
-          <div className="relative">
-            {/* Icon ring */}
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-linear-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <MessageCircle
-                className="h-7 w-7 text-white"
-                aria-hidden="true"
-              />
+          <div className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                <Avatar className="h-14 w-14 border-2 border-primary/20 p-0.5">
+                  <AvatarImage src={peer.avatarUrl} alt={peer.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    <User className="h-6 w-6" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute -bottom-1 -right-1 flex h-5 w-5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-5 w-5 bg-emerald-500 border-2 border-background"></span>
+                </span>
+              </div>
+
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary" className="bg-violet-500/10 text-violet-500 hover:bg-violet-500/10 text-[10px] uppercase tracking-wider font-bold border-none">
+                    Live Request
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase">Just now</span>
+                </div>
+                <h3 className="text-lg font-semibold leading-none tracking-tight">{peer.name}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-1">Started a new conversation</p>
+              </div>
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest text-violet-300">
-                Chat Request
-              </p>
-              <h3 className="mt-1 text-lg font-black">
-                <span className="text-gradient">{peer.name}</span>
-              </h3>
-              <p className="mt-1 text-sm text-white/55">
-                wants to start a conversation with you
-              </p>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              {/* Reject */}
-              <Button
-                type="button"
-                onClick={handleReject}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-white/70 hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
+            <div className="mt-6 flex items-center gap-3">
+              <Button variant="outline" onClick={handleReject} className="flex-1 h-11 rounded-xl border-muted-foreground/20 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all active:scale-95">
+                <X className="mr-2 h-4 w-4" />
                 Decline
               </Button>
 
-              {/* Accept */}
-              <Button
-                type="button"
-                onClick={handleAccept}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-linear-to-r from-violet-500 to-fuchsia-500 text-sm font-bold text-white shadow-lg shadow-violet-500/30 hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-              >
-                <Phone className="h-4 w-4" aria-hidden="true" />
+              <Button onClick={handleAccept} className="flex-1 h-11 rounded-xl bg-linear-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-md shadow-violet-500/20 transition-all active:scale-95">
+                <Phone className="mr-2 h-4 w-4 fill-current" />
                 Accept
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 });
