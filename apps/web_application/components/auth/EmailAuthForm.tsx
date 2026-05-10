@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { MoveRight } from "lucide-react";
 
 export function EmailAuthForm() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
@@ -78,8 +79,9 @@ export function EmailAuthForm() {
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading} className="w-full gap-2.5 text-sm sm:text-[13px]">
         {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
+        <MoveRight className="h-8 w-8" />
       </Button>
 
       <button
