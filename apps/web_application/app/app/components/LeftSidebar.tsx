@@ -9,6 +9,7 @@ import { ACCOUNT_NAV_ITEMS, MAIN_NAV_ITEMS } from "./left-sidebar/constants";
 import { SidebarNavItem } from "./left-sidebar/nav-item";
 import type { DashboardTab } from "./left-sidebar/types";
 import { useSidebarController } from "./left-sidebar/use-sidebar-controller";
+import { ModeToggle } from "@/components/ui/ModeToggle";
 
 export type { DashboardTab } from "./left-sidebar/types";
 
@@ -111,6 +112,9 @@ export function Sidebar({ activeTab }: SidebarProps) {
       )}
 
       <div className="mt-auto shrink-0 border-t border-white/5 p-3">
+        <div className="mb-2">
+          <ModeToggle isCollapsed={isCollapsed} />
+        </div>
         <Button
           variant="destructive"
           className={cn(

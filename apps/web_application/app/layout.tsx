@@ -6,6 +6,7 @@ import AuthProvider from "@/components/auth/AuthProvider";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
 
@@ -20,14 +21,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn(geist.className, "h-full", "antialiased")}>
+    <html lang="en" className={cn(geist.className, "h-full", "antialiased")} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <AuthProvider>
-          <Toaster position="top-center" toastOptions={{ unstyled: true }} />
-          <TooltipProvider>
-            <StoreProvider>{children}</StoreProvider>
-          </TooltipProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <Toaster position="top-center" toastOptions={{ unstyled: true }} />
+            <TooltipProvider>
+              <StoreProvider>{children}</StoreProvider>
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
