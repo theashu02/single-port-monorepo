@@ -6,7 +6,7 @@ export const GUEST_MARKER_KEY = "guest_session_present";
 export const MAIN_NAV_ITEMS: ReadonlyArray<SidebarNavItemData> = [
   { label: "Discover", icon: Compass, href: "/app/discover", badge: "Live", badgeType: "live" },
   { label: "Friend List", icon: Users, href: "/app/friend-list", badge: 7 },
-  { label: "Online People", icon: Wifi, href: "/app/online-people", badge: 248 },
+  { label: "Online People", icon: Wifi, href: "/app/online-people" },
 ];
 
 export const ACCOUNT_NAV_ITEMS: ReadonlyArray<SidebarNavItemData> = [

@@ -10,6 +10,8 @@ import { SidebarNavItem } from "./left-sidebar/nav-item";
 import type { DashboardTab } from "./left-sidebar/types";
 import { useSidebarController } from "./left-sidebar/use-sidebar-controller";
 import { ModeToggle } from "@/components/ui/ModeToggle";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { selectUserCount } from "@/lib/redux/slices/presenceSlice";
 
 export type { DashboardTab } from "./left-sidebar/types";
 
@@ -35,6 +37,7 @@ function SidebarAccountDivider({ isCollapsed }: { isCollapsed: boolean }) {
 
 export function Sidebar({ activeTab }: SidebarProps) {
   const { isCollapsed, toggleCollapsed, handleLogout, isLoggingOut } = useSidebarController();
+  const onlineUserCount = useAppSelector(selectUserCount);
 
   return (
     <motion.aside
@@ -79,6 +82,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
             <SidebarNavItem
               key={item.label}
               {...item}
+              badge={item.label === "Online People" ? onlineUserCount : item.badge}
               isCollapsed={isCollapsed}
               isActive={activeTab === item.label}
             />
