@@ -179,7 +179,7 @@ const ChatWindow: React.FC = memo(() => {
       </div>
 
       <div className="p-5 pt-2">
-        <div className="relative flex items-end gap-2 bg-muted/50 border border-border rounded-[1.8rem] p-2 pr-2.5 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+        <div className="relative flex items-center gap-2 bg-muted/50 border border-border rounded-[1.8rem] p-2 pr-2.5 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
           <Textarea rows={1} value={draft} onChange={handleDraftChange} onKeyDown={handleKeyDown} placeholder="Write a message..." className="min-h-[44px] max-h-[120px] resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground py-3 px-4 scrollbar-hide text-[15px]" />
           <Button size="icon" onClick={handleSend} disabled={!draft.trim()} className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-90">
             <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
