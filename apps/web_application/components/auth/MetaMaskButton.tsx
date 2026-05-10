@@ -4,6 +4,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { BrowserProvider, type Eip1193Provider } from "ethers";
 import { Button } from "@/components/ui/button";
+import { METAMASK_LOGO } from "@/core/constants/config";
+import Image from "next/image";
 
 declare global {
   interface Window { ethereum?: Eip1193Provider; }
@@ -58,7 +60,8 @@ export function MetaMaskButton() {
   };
 
   return (
-    <Button variant="outline" className="w-full" disabled={loading} onClick={handleConnect}>
+    <Button variant="outline" className="w-full gap-2" disabled={loading} onClick={handleConnect}>
+      <Image src={METAMASK_LOGO} width={20} height={20} alt="MetaMask logo"/>
       {loading ? "Connecting..." : "Continue with MetaMask"}
     </Button>
   );
