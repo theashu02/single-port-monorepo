@@ -12,12 +12,18 @@ export function GoogleButton() {
   return (
     <Button
       variant="outline"
-      className="w-full gap-2"
+      className="h-12 w-full rounded-lg px-6"
       disabled={pending}
       onClick={() => start(() => { void signIn("google", { callbackUrl: "/app" }); })}
     >
-      <Image src={GOOGLE_LOGO} width={20} height={20} alt="Google logo"/>
-      {pending ? "Redirecting..." : "Continue with Google"}
+      <span className="grid min-w-60 grid-cols-[1.5rem_auto] items-center justify-center gap-3">
+        <span className="flex size-6 items-center justify-center justify-self-center">
+          <Image src={GOOGLE_LOGO} width={20} height={20} alt="Google logo" />
+        </span>
+        <span className="text-left text-sm sm:text-[13px]">
+          {pending ? "Redirecting..." : "Continue with Google"}
+        </span>
+      </span>
     </Button>
   );
 }

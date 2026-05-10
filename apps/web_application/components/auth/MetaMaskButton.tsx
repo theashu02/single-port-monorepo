@@ -60,9 +60,25 @@ export function MetaMaskButton() {
   };
 
   return (
-    <Button variant="outline" className="w-full gap-2" disabled={loading} onClick={handleConnect}>
-      <Image src={METAMASK_LOGO} width={20} height={20} alt="MetaMask logo"/>
-      {loading ? "Connecting..." : "Continue with MetaMask"}
+    <Button
+      variant="outline"
+      className="h-12 w-full rounded-lg px-6"
+      disabled={loading}
+      onClick={handleConnect}
+    >
+      <span className="grid min-w-60 grid-cols-[1.5rem_auto] items-center justify-center gap-3">
+        <span className="flex size-6 items-center justify-center justify-self-center">
+          <Image
+            src={METAMASK_LOGO}
+            width={20}
+            height={20}
+            alt="MetaMask logo"
+          />
+        </span>
+        <span className="text-left text-sm sm:text-[13px]">
+          {loading ? "Connecting..." : "Continue with MetaMask"}
+        </span>
+      </span>
     </Button>
   );
 }

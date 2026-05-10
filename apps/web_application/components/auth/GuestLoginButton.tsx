@@ -17,9 +17,20 @@ export function GuestLoginButton() {
   };
 
   return (
-    <Button variant="outline" className="w-full gap-2" disabled={isPending} onClick={handleGuestLogin}>
-      <Image src={GUEST_LOGO} width={20} height={20} alt="Guest logo"/>
-      {isPending ? "Redirecting..." : "Continue as Guest"}
+    <Button
+      variant="outline"
+      className="h-12 w-full rounded-lg px-6"
+      disabled={isPending}
+      onClick={handleGuestLogin}
+    >
+      <span className="grid min-w-60 grid-cols-[1.5rem_auto] items-center justify-center gap-3">
+        <span className="flex size-6 items-center justify-center justify-self-center">
+          <Image src={GUEST_LOGO} width={20} height={20} alt="Guest logo" />
+        </span>
+        <span className="text-left text-sm sm:text-[13px]">
+          {isPending ? "Redirecting..." : "Continue as Guest"}
+        </span>
+      </span>
     </Button>
   );
 }
