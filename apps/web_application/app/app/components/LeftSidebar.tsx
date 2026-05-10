@@ -19,14 +19,14 @@ interface SidebarProps {
 
 function SidebarAccountDivider({ isCollapsed }: { isCollapsed: boolean }) {
   if (isCollapsed) {
-    return <div className="mx-2 mt-8 mb-2 h-px bg-white/10" />;
+    return <div className="mx-2 mt-8 mb-2 h-px bg-sidebar-border" />;
   }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="mt-8 mb-2 overflow-hidden whitespace-nowrap px-2 text-[10px] uppercase tracking-[0.2em] text-white/30"
+      className="mt-8 mb-2 overflow-hidden whitespace-nowrap px-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/50"
     >
       Account
     </motion.div>
@@ -41,11 +41,11 @@ export function Sidebar({ activeTab }: SidebarProps) {
       initial={false}
       animate={{ width: isCollapsed ? 80 : 240 }}
       transition={{ type: "spring", stiffness: 300, damping: 30, restDelta: 0.5 }}
-      className="relative z-30 hidden h-screen flex-col overflow-hidden border-r border-white/5 bg-[#0c0a18] will-change-[width] md:flex"
+      className="relative z-30 hidden h-screen flex-col overflow-hidden border-r border-sidebar-border bg-sidebar will-change-[width] md:flex"
     >
-      <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/5 px-4">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-violet-500 to-cyan-400">
-          <Sparkles className="h-5 w-5 text-white" aria-hidden="true" />
+      <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-sidebar-border px-4">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary">
+          <Sparkles className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
         </div>
 
         {!isCollapsed && (
@@ -55,8 +55,8 @@ export function Sidebar({ activeTab }: SidebarProps) {
             transition={{ duration: 0.2, delay: 0.1 }}
             className="ml-3 flex flex-col overflow-hidden whitespace-nowrap"
           >
-            <span className="text-lg font-black tracking-tight text-white">Vibez</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-white/40">Beta v1.0</span>
+            <span className="text-lg font-black tracking-tight text-sidebar-foreground">Vibez</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Beta v1.0</span>
           </motion.div>
         )}
 
@@ -64,7 +64,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
           variant="ghost"
           size="icon-xs"
           onClick={toggleCollapsed}
-          className={cn("rounded-full bg-white/5 text-white/50 hover:bg-white/10", isCollapsed ? "mx-auto" : "ml-auto")}
+          className={cn("rounded-full bg-sidebar-accent text-sidebar-foreground/50 hover:bg-sidebar-accent/80", isCollapsed ? "mx-auto" : "ml-auto")}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <motion.div animate={{ rotate: isCollapsed ? 180 : 0 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}>
@@ -101,30 +101,30 @@ export function Sidebar({ activeTab }: SidebarProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-violet-500/20 bg-violet-500/10 p-4"
+          className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-primary/20 bg-primary/10 p-4"
         >
-          <div className="text-xs font-semibold text-violet-300">Go Pro</div>
-          <div className="mt-1 text-[11px] leading-snug text-white/50">Unlimited matches, no ads.</div>
-          <Button size="sm" className="mt-3 h-8 w-full rounded-lg border-0 bg-linear-to-r from-violet-500 to-cyan-400 text-xs text-white hover:opacity-90">
+          <div className="text-xs font-semibold text-primary">Go Pro</div>
+          <div className="mt-1 text-[11px] leading-snug text-muted-foreground">Unlimited matches, no ads.</div>
+          <Button size="sm" className="mt-3 h-8 w-full rounded-lg bg-primary text-xs text-primary-foreground hover:bg-primary/90">
             Upgrade
           </Button>
         </motion.div>
       )}
 
-      <div className="mt-auto shrink-0 border-t border-white/5 p-3">
+      <div className="mt-auto shrink-0 border-t border-sidebar-border p-3">
         <div className="mb-2">
           <ModeToggle isCollapsed={isCollapsed} />
         </div>
         <Button
           variant="destructive"
           className={cn(
-            "flex h-11 w-full items-center justify-start rounded-xl border-0 bg-rose-500/10 px-3 text-rose-400 hover:bg-rose-500/20",
+            "flex h-11 w-full items-center justify-start rounded-xl border-0 bg-destructive/10 px-3 text-destructive hover:bg-destructive/20",
             isCollapsed && "justify-center px-0",
           )}
           onClick={handleLogout}
           disabled={isLoggingOut}
         >
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-rose-500/15">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-destructive/15">
             <LogOut className="h-4 w-4" aria-hidden="true" />
           </span>
 

@@ -27,7 +27,7 @@ export function ModeToggle({ isCollapsed }: ModeToggleProps) {
         <Button
           variant="ghost"
           className={cn(
-            "flex h-11 w-full items-center justify-start rounded-xl border-0 px-3 text-white/70 hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0",
+            "flex h-11 w-full items-center justify-start rounded-xl border-0 bg-sidebar-accent px-3 text-sidebar-foreground/70 hover:bg-(--sidebar-accent)/80 hover:text-sidebar-foreground focus-visible:ring-0 focus-visible:ring-offset-0",
             isCollapsed && "justify-center px-0"
           )}
         >
