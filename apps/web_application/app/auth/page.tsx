@@ -5,6 +5,7 @@ import { EmailAuthForm } from "@/components/auth/EmailAuthForm";
 import Image from "next/image";
 import { getServerAuthSession } from "@/core/auth/session";
 import { GuestLoginButton } from "@/components/auth/GuestLoginButton";
+import { LOGIN_PAGE_IMAGE } from "@/core/constants/config";
 
 export default async function AuthPage() {
   const session = await getServerAuthSession();
@@ -13,14 +14,14 @@ export default async function AuthPage() {
   return (
     <main className="flex min-h-screen">
       {/* LEFT 60% - HERO IMAGE */}
-      <div className="hidden lg:flex lg:w-[60%] relative bg-black items-center justify-center overflow-hidden">
+      <div className="hidden lg:flex lg:w-[70%] relative bg-black items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image src="/auth-hero.png" alt="Authentication Background" fill className="object-cover opacity-80" priority />
+          <Image src={LOGIN_PAGE_IMAGE} alt="Authentication Background" fill className="object-fill opacity-80" priority />
         </div>
       </div>
 
       {/* RIGHT 40% - AUTH FORM */}
-      <div className="flex w-full lg:w-[40%] items-center justify-center bg-white dark:bg-gray-950 px-8 py-12 lg:px-16">
+      <div className="flex w-full lg:w-[30%] items-center justify-center bg-white dark:bg-gray-950 px-8 py-12 lg:px-16">
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center lg:text-left">
             <h4 className="text-4xl font-bold tracking-wide text-gray-900 dark:text-white">Great to see you !</h4>

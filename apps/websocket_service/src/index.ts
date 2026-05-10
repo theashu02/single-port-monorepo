@@ -12,6 +12,6 @@ export type * from "./types";
 
 import { startWebSocketService } from "./server";
 
-const app = startWebSocketService();
-
-export default app;
+if (import.meta.main) {
+  startWebSocketService();
+}

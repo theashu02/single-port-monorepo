@@ -1,0 +1,1 @@
+export const LOGIN_PAGE_IMAGE = "https://res.cloudinary.com/dntxrtlsj/image/upload/v1778366400/ChatGPT_Image_May_10_2026_04_09_23_AM_bchkij.png"
