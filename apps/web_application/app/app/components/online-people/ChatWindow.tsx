@@ -139,23 +139,23 @@ const ChatWindow: React.FC = memo(() => {
   if (phase !== "open" || !peer || !channel) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col rounded-[2.5rem] border border-white/10 bg-zinc-950/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in slide-in-from-right-8 duration-500 overflow-hidden ring-1 ring-white/5">
-      <div className="flex items-center justify-between px-6 py-5 bg-linear-to-b from-white/3 to-transparent">
+    <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col rounded-[2.5rem] border border-border bg-background/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in slide-in-from-right-8 duration-500 overflow-hidden ring-1 ring-border/50">
+      <div className="flex items-center justify-between px-6 py-5 bg-linear-to-b from-foreground/5 to-transparent">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Avatar className="h-10 w-10 ring-2 ring-violet-500/20 ring-offset-2 ring-offset-zinc-950">
+            <Avatar className="h-10 w-10 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
               <AvatarImage src={peer.avatarUrl} />
-              <AvatarFallback className="bg-zinc-800 text-zinc-400 font-medium">{peer.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-muted text-muted-foreground font-medium">{peer.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-[3px] border-zinc-950" />
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-[3px] border-background" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-zinc-100 tracking-tight">{peer.name}</span>
-            <span className={`text-[10px] font-semibold uppercase tracking-widest ${isPeerTyping ? "text-violet-300" : "text-emerald-400"}`}>{isPeerTyping ? "Typing..." : "Online"}</span>
+            <span className="text-sm font-bold text-foreground tracking-tight">{peer.name}</span>
+            <span className={`text-[10px] font-semibold uppercase tracking-widest ${isPeerTyping ? "text-primary" : "text-emerald-600 dark:text-emerald-400"}`}>{isPeerTyping ? "Typing..." : "Online"}</span>
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all">
+        <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8 rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -165,10 +165,10 @@ const ChatWindow: React.FC = memo(() => {
           <div className="space-y-6 pb-6">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center pt-20 text-center space-y-3">
-                <div className="h-12 w-12 rounded-2xl bg-zinc-900 flex items-center justify-center border border-white/5">
-                  <Sparkles className="h-6 w-6 text-violet-400" />
+                <div className="h-12 w-12 rounded-2xl bg-muted/50 flex items-center justify-center border border-border">
+                  <Sparkles className="h-6 w-6 text-primary" />
                 </div>
-                <p className="text-xs text-zinc-500 font-medium max-w-[160px]">This is the start of your encrypted conversation.</p>
+                <p className="text-xs text-muted-foreground font-medium max-w-[160px]">This is the start of your encrypted conversation.</p>
               </div>
             ) : (
               messages.map((msg) => <MessageRow key={msg.id} msg={msg} isMine={msg.fromId !== "__system__" && msg.fromId === currentUserId} />)
@@ -179,13 +179,13 @@ const ChatWindow: React.FC = memo(() => {
       </div>
 
       <div className="p-5 pt-2">
-        <div className="relative flex items-end gap-2 bg-zinc-900/50 border border-white/5 rounded-[1.8rem] p-2 pr-2.5 focus-within:border-violet-500/30 focus-within:ring-4 focus-within:ring-violet-500/10 transition-all">
-          <Textarea rows={1} value={draft} onChange={handleDraftChange} onKeyDown={handleKeyDown} placeholder="Write a message..." className="min-h-[44px] max-h-[120px] resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-200 placeholder:text-zinc-600 py-3 px-4 scrollbar-hide text-[15px]" />
-          <Button size="icon" onClick={handleSend} disabled={!draft.trim()} className="h-9 w-9 shrink-0 rounded-full bg-white text-black hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 transition-all active:scale-90">
+        <div className="relative flex items-end gap-2 bg-muted/50 border border-border rounded-[1.8rem] p-2 pr-2.5 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+          <Textarea rows={1} value={draft} onChange={handleDraftChange} onKeyDown={handleKeyDown} placeholder="Write a message..." className="min-h-[44px] max-h-[120px] resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground py-3 px-4 scrollbar-hide text-[15px]" />
+          <Button size="icon" onClick={handleSend} disabled={!draft.trim()} className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground transition-all active:scale-90">
             <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
           </Button>
         </div>
-        <p className="text-[10px] text-center text-zinc-600 mt-3 font-medium">Press Enter to send</p>
+        <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium">Press Enter to send</p>
       </div>
     </div>
   );

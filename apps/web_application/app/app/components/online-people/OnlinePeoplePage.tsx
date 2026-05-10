@@ -86,21 +86,21 @@ const UserCard: React.FC<{
       isWaitingForThisUser ||
       isLocalChatLocked;
     const buttonClassName = isTargetBusy
-      ? "mt-3 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-70 shadow px-3 h-8 rounded-lg bg-amber-400/15 text-amber-100 border border-amber-400/20 text-[11px] font-semibold"
-      : "mt-3 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:bg-primary/90 px-3 h-8 rounded-lg bg-linear-to-r from-violet-500 to-fuchsia-500 text-[11px] font-semibold";
+      ? "mt-3 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-70 shadow px-3 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[11px] font-semibold"
+      : "mt-3 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-primary-foreground shadow hover:opacity-90 px-3 h-8 rounded-lg bg-primary text-[11px] font-semibold";
 
     const handleChat = useCallback(() => {
       onChat(user);
     }, [onChat, user]);
 
     return (
-      <div className="glass border border-white/10 rounded-2xl p-4 relative group overflow-hidden">
-        <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-linear-to-br from-violet-500/30 to-cyan-400/20 opacity-0 group-hover:opacity-100 blur-2xl transition" />
+      <div className="glass border border-border rounded-2xl p-4 relative group overflow-hidden bg-card/30">
+        <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 opacity-0 group-hover:opacity-100 blur-2xl transition" />
 
         <div className="relative flex flex-col items-center text-center">
           <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-linear-to-br from-violet-500 to-cyan-400 blur-md opacity-50 group-hover:opacity-80 transition" />
-            <span className="flex shrink-0 overflow-hidden rounded-full relative h-20 w-20 ring-2 ring-white/20">
+            <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-20 group-hover:opacity-40 transition" />
+            <span className="flex shrink-0 overflow-hidden rounded-full relative h-20 w-20 ring-2 ring-border/50">
               <Image
                 className="aspect-square h-full w-full object-cover"
                 src={avatar}
@@ -110,12 +110,12 @@ const UserCard: React.FC<{
               />
             </span>
             <span
-              className={`absolute -bottom-0.5 right-1 h-4 w-4 rounded-full ring-2 ring-[#0c0a18] ${user.isBusy ? "bg-amber-300" : "bg-emerald-400 pulse-ring"}`}
+              className={`absolute -bottom-0.5 right-1 h-4 w-4 rounded-full ring-2 ring-background ${user.isBusy ? "bg-amber-500" : "bg-emerald-500 pulse-ring"}`}
             />
           </div>
 
-          <p className="mt-3 text-sm font-bold truncate w-full">{user.name}</p>
-          <p className="text-[11px] text-white/50 truncate w-full">
+          <p className="mt-3 text-sm font-bold truncate w-full text-foreground">{user.name}</p>
+          <p className="text-[11px] text-muted-foreground truncate w-full">
             {isCurrentUser
               ? user.isBusy
                 ? "You are in a chat"
@@ -126,16 +126,16 @@ const UserCard: React.FC<{
           </p>
 
           <div className="flex gap-1 mt-2 flex-wrap justify-center">
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-400/10 text-emerald-300 border border-emerald-400/15">
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               Live
             </span>
             {!isCurrentUser && user.isBusy && (
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-400/10 text-amber-200 border border-amber-400/15">
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                 Busy
               </span>
             )}
             {isCurrentUser && (
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-white/60">
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground border border-border">
                 You
               </span>
             )}
@@ -220,54 +220,54 @@ export const OnlinePeoplePage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col w-full h-full p-4 lg:p-6 gap-4 min-w-0 overflow-hidden">
-      <div className="relative rounded-3xl overflow-hidden border border-white/10 glass p-6 grid-bg">
-        <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full bg-emerald-400/20 blur-3xl" />
-        <div className="absolute -bottom-20 -right-20 h-60 w-60 rounded-full bg-violet-500/20 blur-3xl" />
+    <div className="flex flex-col w-full h-full p-4 lg:p-6 gap-4 min-w-0 overflow-hidden bg-background text-foreground">
+      <div className="relative rounded-3xl overflow-hidden border border-border glass p-6 grid-bg bg-card/30">
+        <div className="absolute -top-20 -left-20 h-60 w-60 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute -bottom-20 -right-20 h-60 w-60 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="relative flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2">
               <span
-                className={`relative h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-400 pulse-ring" : "bg-amber-300"}`}
+                className={`relative h-2.5 w-2.5 rounded-full ${isConnected ? "bg-emerald-500 pulse-ring" : "bg-amber-500"}`}
               />
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-300">
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-600 dark:text-emerald-400">
                 Live Presence
               </span>
             </div>
             <h2 className="text-3xl font-black mt-2">
-              <span className="text-gradient">{users.length}</span>{" "}
+              <span className="text-primary">{users.length}</span>{" "}
               {users.length === 1 ? "user" : "users"} online
             </h2>
-            <p className="text-sm text-white/60 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {statusMessage(status, error)}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 min-w-[220px]">
-            <div className="rounded-2xl glass border border-white/10 p-3">
-              <div className="flex items-center gap-2 text-white/50 text-xs">
+            <div className="rounded-2xl glass border border-border p-3 bg-card/50">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
                 <UsersRound className="h-4 w-4" aria-hidden="true" />
                 Other users
               </div>
-              <p className="mt-1 text-2xl font-black">{otherUsersCount}</p>
+              <p className="mt-1 text-2xl font-black text-foreground">{otherUsersCount}</p>
             </div>
-            <div className="rounded-2xl glass border border-white/10 p-3">
-              <div className="flex items-center gap-2 text-white/50 text-xs">
+            <div className="rounded-2xl glass border border-border p-3 bg-card/50">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
                 {isConnected ? (
                   <Wifi
-                    className="h-4 w-4 text-emerald-300"
+                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
                     aria-hidden="true"
                   />
                 ) : (
                   <WifiOff
-                    className="h-4 w-4 text-amber-300"
+                    className="h-4 w-4 text-amber-600 dark:text-amber-400"
                     aria-hidden="true"
                   />
                 )}
                 Busy now
               </div>
-              <p className="mt-1 text-sm font-bold text-white/80">
+              <p className="mt-1 text-sm font-bold text-foreground">
                 {busyUsersCount}
               </p>
             </div>
@@ -278,13 +278,13 @@ export const OnlinePeoplePage: React.FC = () => {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40"
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
             aria-hidden="true"
           />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex w-full border px-3 py-1 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 h-10 bg-white/5 border-white/10 rounded-xl text-sm placeholder:text-white/30 focus-visible:ring-violet-500/50"
+            className="flex w-full border border-border px-3 py-1 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-9 h-10 bg-secondary/50 rounded-xl text-sm placeholder:text-muted-foreground focus-visible:border-primary/50"
             placeholder="Search live users by name or id..."
           />
         </div>
@@ -296,7 +296,7 @@ export const OnlinePeoplePage: React.FC = () => {
             key={filter.id}
             type="button"
             onClick={() => setActiveFilter(filter.id)}
-            className={`shrink-0 px-4 h-8 rounded-full text-xs font-semibold capitalize transition ${activeFilter === filter.id ? "bg-linear-to-r from-violet-500 to-cyan-400 text-white" : "bg-white/5 text-white/60 hover:bg-white/10 border border-white/10"}`}
+            className={`shrink-0 px-4 h-8 rounded-full text-xs font-semibold capitalize transition ${activeFilter === filter.id ? "bg-primary text-primary-foreground shadow-md" : "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground border border-border"}`}
           >
             {filter.label}
           </button>
@@ -306,16 +306,16 @@ export const OnlinePeoplePage: React.FC = () => {
       <div className="relative overflow-y-auto flex-1 -mx-2 px-2 scrollbar-hide">
         {showEmptyState ? (
           <div className="h-full min-h-[260px] grid place-items-center text-center">
-            <div className="max-w-sm rounded-3xl glass border border-white/10 p-6">
-              <div className="mx-auto h-12 w-12 rounded-2xl bg-white/5 grid place-items-center text-white/70">
+            <div className="max-w-sm rounded-3xl glass border border-border p-6 bg-card/30">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-secondary grid place-items-center text-secondary-foreground">
                 <UsersRound className="h-5 w-5" aria-hidden="true" />
               </div>
-              <h3 className="mt-4 text-base font-bold">
+              <h3 className="mt-4 text-base font-bold text-foreground">
                 {search
                   ? "No matching online users"
                   : "No online users to show"}
               </h3>
-              <p className="mt-2 text-sm text-white/55">
+              <p className="mt-2 text-sm text-muted-foreground/80">
                 {statusMessage(status, error)}
               </p>
             </div>
