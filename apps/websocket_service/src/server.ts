@@ -22,19 +22,21 @@ export const configureServiceMetrics = () => {
 export const createWebSocketService = () => {
   configureServiceMetrics();
 
-  return new Elysia().ws(WS_PATH, {
-    open(ws) {
-      handleSocketOpen(toRealtimeSocket(ws));
-    },
+  return new Elysia()
+    .get("/health", () => ({ ok: true }))
+    .ws(WS_PATH, {
+      open(ws) {
+        handleSocketOpen(toRealtimeSocket(ws));
+      },
 
-    message(ws, rawMessage) {
-      handleSocketMessage(toRealtimeSocket(ws), rawMessage);
-    },
+      message(ws, rawMessage) {
+        handleSocketMessage(toRealtimeSocket(ws), rawMessage);
+      },
 
-    close(ws) {
-      handleSocketClose(toRealtimeSocket(ws));
-    },
-  });
+      close(ws) {
+        handleSocketClose(toRealtimeSocket(ws));
+      },
+    });
 };
 
 export const startWebSocketService = (port = SERVICE_PORT) => {

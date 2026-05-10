@@ -1,0 +1,15 @@
+.git
+.turbo
+.vercel
+node_modules
+**/node_modules
+.next
+**/.next
+out
+build
+dist
+coverage
+*.log
+.env
+.env.*
+apps/*/bun.lock

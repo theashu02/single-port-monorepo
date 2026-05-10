@@ -1,0 +1,53 @@
+services:
+  websocket_service:
+    build:
+      context: .
+      dockerfile: apps/websocket_service/Dockerfile
+    image: mono-repo-websocket-service
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://localhost:3001/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web_application:
+    build:
+      context: .
+      dockerfile: apps/web_application/Dockerfile
+      args:
+        NEXT_PUBLIC_WEBSOCKET_URL: ws://localhost:3001/ws
+    image: mono-repo-web-application
+    depends_on:
+      websocket_service:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - apps/web_application/.env
+    environment:
+      NODE_ENV: production
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_WEBSOCKET_URL: ws://localhost:3001/ws
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://localhost:3000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5

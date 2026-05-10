@@ -8,4 +8,4 @@ const app = new Elysia({ prefix: '/api' })
     .use(authRoutes);
 
 export type App = typeof app;
-export { app }; // Export the instance for Next.js to use
+export { app };
