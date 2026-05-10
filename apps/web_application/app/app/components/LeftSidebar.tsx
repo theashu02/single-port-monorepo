@@ -64,7 +64,7 @@ export function Sidebar({ activeTab }: SidebarProps) {
           variant="ghost"
           size="icon-xs"
           onClick={toggleCollapsed}
-          className={cn("rounded-full bg-sidebar-accent text-sidebar-foreground/50 hover:bg-sidebar-accent/80", isCollapsed ? "mx-auto" : "ml-auto")}
+          className={cn("rounded-full bg-sidebar-accent text-sidebar-foreground/50 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground", isCollapsed ? "mx-auto" : "ml-auto")}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <motion.div animate={{ rotate: isCollapsed ? 180 : 0 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}>
