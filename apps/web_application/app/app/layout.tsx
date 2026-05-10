@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activeTab = getActiveTab(pathname);
 
   return (
-    <div className="dashboard-dark flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       <OnlinePresenceProvider>
         <Sidebar activeTab={activeTab} />
 
