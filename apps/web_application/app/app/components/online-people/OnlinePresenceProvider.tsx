@@ -1,0 +1,561 @@
+"use client";
+
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useSession } from "next-auth/react";
+import { fetchGuestSession } from "@/core/apis/Guest_API";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  chatBusy,
+  chatExpired,
+  chatReady,
+  chatRejected,
+  chatTypingReceived,
+  inviteReceived,
+  messageReceived,
+} from "@/lib/redux/slices/chatSlice";
+import {
+  onlineUsersSnapshotReceived,
+  presenceIdentityChanged,
+  presenceReset,
+  presenceStatusChanged,
+  selectCurrentUserId,
+  selectOnlineUsers,
+  selectPresenceError,
+  selectPresenceStatus,
+  selectUserCount,
+  userBusyChanged,
+  userJoinedReceived,
+  userLeftReceived,
+  type OnlineUser,
+  type PresenceStatus,
+} from "@/lib/redux/slices/presenceSlice";
+
+export type {
+  OnlineUser,
+  PresenceStatus,
+} from "@/lib/redux/slices/presenceSlice";
+
+const GUEST_MARKER_KEY = "guest_session_present";
+const DEFAULT_WS_ENDPOINT = "ws://localhost:3001/ws";
+const SOCKET_REPLACED_CODE = 4000;
+
+interface OnlinePresenceActions {
+  requestChat: (targetId: string) => boolean;
+  acceptChat: (fromId: string) => boolean;
+  rejectChat: (fromId: string) => boolean;
+  sendMessage: (channel: string, text: string) => boolean;
+  sendTypingStatus: (channel: string, isTyping: boolean) => boolean;
+  endChat: (channel: string) => boolean;
+}
+
+interface OnlinePresenceContextValue extends OnlinePresenceActions {
+  users: OnlineUser[];
+  userCount: number;
+  currentUserId: string | null;
+  status: PresenceStatus;
+  error: string | null;
+}
+
+const OnlinePresenceActionsContext =
+  createContext<OnlinePresenceActions | null>(null);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseOnlineUser(value: unknown): OnlineUser | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    typeof value.name !== "string"
+  )
+    return null;
+  const id = value.id.trim();
+  const name = value.name.trim();
+  return id && name ? { id, name, isBusy: value.isBusy === true } : null;
+}
+
+function parseNonEmptyString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+}
+
+type ServerEvent =
+  | { type: "online_users_snapshot"; users: OnlineUser[] }
+  | { type: "user_joined"; user: OnlineUser }
+  | { type: "user_left"; userId: string }
+  | { type: "user_status_changed"; userId: string; isBusy: boolean }
+  | { type: "chat_invite"; from: OnlineUser; channel: string }
+  | { type: "chat_ready"; channel: string }
+  | { type: "chat_rejected"; byId: string }
+  | { type: "chat_busy"; byId: string }
+  | { type: "chat_expired"; byId: string }
+  | { type: "chat_message"; channel: string; fromId: string; text: string }
+  | {
+      type: "chat_typing";
+      channel: string;
+      fromId: string;
+      isTyping: boolean;
+    };
+
+function parseServerEvent(raw: string): ServerEvent | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed) || typeof parsed.type !== "string") return null;
+
+  switch (parsed.type) {
+    case "online_users_snapshot": {
+      if (!Array.isArray(parsed.users)) return null;
+      const users = parsed.users
+        .map(parseOnlineUser)
+        .filter((user): user is OnlineUser => user !== null);
+      return { type: "online_users_snapshot", users };
+    }
+    case "user_joined": {
+      const user = parseOnlineUser(parsed.user);
+      return user ? { type: "user_joined", user } : null;
+    }
+    case "user_left": {
+      const userId = parseNonEmptyString(parsed.userId);
+      return userId ? { type: "user_left", userId } : null;
+    }
+    case "user_status_changed": {
+      const userId = parseNonEmptyString(parsed.userId);
+      if (!userId || typeof parsed.isBusy !== "boolean") return null;
+      return { type: "user_status_changed", userId, isBusy: parsed.isBusy };
+    }
+    case "chat_invite": {
+      const from = parseOnlineUser(parsed.from);
+      const channel = parseNonEmptyString(parsed.channel);
+      return from && channel ? { type: "chat_invite", from, channel } : null;
+    }
+    case "chat_ready": {
+      const channel = parseNonEmptyString(parsed.channel);
+      return channel ? { type: "chat_ready", channel } : null;
+    }
+    case "chat_rejected": {
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_rejected", byId } : null;
+    }
+    case "chat_busy": {
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_busy", byId } : null;
+    }
+    case "chat_expired": {
+      const byId = parseNonEmptyString(parsed.byId);
+      return byId ? { type: "chat_expired", byId } : null;
+    }
+    case "chat_message": {
+      const channel = parseNonEmptyString(parsed.channel);
+      const fromId = parseNonEmptyString(parsed.fromId);
+      if (!channel || !fromId || typeof parsed.text !== "string") return null;
+      return { type: "chat_message", channel, fromId, text: parsed.text };
+    }
+    case "chat_typing": {
+      const channel = parseNonEmptyString(parsed.channel);
+      const fromId = parseNonEmptyString(parsed.fromId);
+      if (!channel || !fromId || typeof parsed.isTyping !== "boolean")
+        return null;
+      return {
+        type: "chat_typing",
+        channel,
+        fromId,
+        isTyping: parsed.isTyping,
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+function buildWebSocketUrl(endpoint: string, id: string, name: string): string {
+  const url = new URL(endpoint, window.location.href);
+  if (url.protocol === "http:") url.protocol = "ws:";
+  if (url.protocol === "https:") url.protocol = "wss:";
+  url.searchParams.set("userId", id);
+  url.searchParams.set("name", name);
+  return url.toString();
+}
+
+type Identity = { id: string; name: string };
+
+function isSameIdentity(left: Identity | null, right: Identity): boolean {
+  return left?.id === right.id && left.name === right.name;
+}
+
+function createClientMessageId(fromId: string, ts: number): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  return `${fromId}-${ts}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function OnlinePresenceProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { data: session, status: sessionStatus } = useSession();
+  const dispatch = useAppDispatch();
+  const [identity, setIdentity] = useState<Identity | null>(null);
+
+  const socketRef = useRef<WebSocket | null>(null);
+  const dispatchRef = useRef(dispatch);
+
+  useEffect(() => {
+    dispatchRef.current = dispatch;
+  }, [dispatch]);
+
+  useEffect(() => {
+    let active = true;
+
+    const commitIdentity = (nextIdentity: Identity) => {
+      if (!active) return;
+      setIdentity((current) =>
+        isSameIdentity(current, nextIdentity) ? current : nextIdentity,
+      );
+      dispatch(presenceIdentityChanged(nextIdentity.id));
+    };
+
+    async function resolveIdentity() {
+      if (sessionStatus === "loading") {
+        dispatch(
+          presenceStatusChanged({ status: "resolving-user", error: null }),
+        );
+        return;
+      }
+
+      const sessionUserId = session?.user?.id?.trim();
+      if (sessionUserId) {
+        const name =
+          session?.user?.name?.trim() ||
+          session?.user?.email?.split("@")[0]?.trim() ||
+          "User";
+        commitIdentity({ id: `user:${sessionUserId}`, name });
+        return;
+      }
+
+      const hasGuestMarker =
+        window.localStorage.getItem(GUEST_MARKER_KEY) === "1";
+      if (!hasGuestMarker) {
+        if (!active) return;
+        setIdentity(null);
+        dispatch(presenceReset({ status: "unauthenticated", error: null }));
+        return;
+      }
+
+      dispatch(
+        presenceStatusChanged({ status: "resolving-user", error: null }),
+      );
+
+      try {
+        const guest = await fetchGuestSession();
+        if (!active) return;
+        const guestId = guest.guest_id?.trim();
+        if (!guestId) throw new Error("Guest session is missing an id.");
+        commitIdentity({
+          id: `guest:${guestId}`,
+          name: guest.nickname?.trim() || "Guest",
+        });
+      } catch (err) {
+        if (!active) return;
+        window.localStorage.removeItem(GUEST_MARKER_KEY);
+        setIdentity(null);
+        dispatch(
+          presenceReset({
+            status: "unauthenticated",
+            error:
+              err instanceof Error
+                ? err.message
+                : "Unable to resolve the current user.",
+          }),
+        );
+      }
+    }
+
+    void resolveIdentity();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    dispatch,
+    session?.user?.email,
+    session?.user?.id,
+    session?.user?.name,
+    sessionStatus,
+  ]);
+
+  useEffect(() => {
+    if (!identity) {
+      socketRef.current?.close(1000, "No active user identity");
+      socketRef.current = null;
+      return;
+    }
+
+    let closedByEffect = false;
+    let reconnectAttempts = 0;
+    let reconnectTimer: number | undefined;
+
+    const connect = () => {
+      const endpoint =
+        process.env.NEXT_PUBLIC_WEBSOCKET_URL || DEFAULT_WS_ENDPOINT;
+      let socket: WebSocket;
+
+      try {
+        socket = new WebSocket(
+          buildWebSocketUrl(endpoint, identity.id, identity.name),
+        );
+      } catch (err) {
+        dispatch(
+          presenceStatusChanged({
+            status: "error",
+            error:
+              err instanceof Error
+                ? err.message
+                : "Invalid websocket endpoint.",
+          }),
+        );
+        return;
+      }
+
+      socketRef.current = socket;
+      dispatch(presenceStatusChanged({ status: "connecting", error: null }));
+
+      socket.onopen = () => {
+        reconnectAttempts = 0;
+        dispatch(presenceStatusChanged({ status: "connected", error: null }));
+      };
+
+      socket.onmessage = (event) => {
+        if (typeof event.data !== "string") return;
+        const msg = parseServerEvent(event.data);
+        if (!msg) return;
+
+        switch (msg.type) {
+          case "online_users_snapshot":
+            dispatchRef.current(onlineUsersSnapshotReceived(msg.users));
+            return;
+          case "user_joined":
+            dispatchRef.current(userJoinedReceived(msg.user));
+            return;
+          case "user_left":
+            dispatchRef.current(userLeftReceived(msg.userId));
+            return;
+          case "user_status_changed":
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.userId, isBusy: msg.isBusy }),
+            );
+            return;
+          case "chat_invite":
+            dispatchRef.current(
+              inviteReceived({ from: msg.from, channel: msg.channel }),
+            );
+            return;
+          case "chat_ready":
+            dispatchRef.current(chatReady({ channel: msg.channel }));
+            return;
+          case "chat_rejected":
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.byId, isBusy: false }),
+            );
+            dispatchRef.current(
+              userBusyChanged({ userId: identity.id, isBusy: false }),
+            );
+            dispatchRef.current(chatRejected());
+            return;
+          case "chat_busy":
+            dispatchRef.current(chatBusy());
+            return;
+          case "chat_expired":
+            dispatchRef.current(
+              userBusyChanged({ userId: msg.byId, isBusy: false }),
+            );
+            dispatchRef.current(
+              userBusyChanged({ userId: identity.id, isBusy: false }),
+            );
+            dispatchRef.current(chatExpired());
+            return;
+          case "chat_message": {
+            const ts = Date.now();
+            dispatchRef.current(
+              messageReceived({
+                id: createClientMessageId(msg.fromId, ts),
+                channel: msg.channel,
+                fromId: msg.fromId,
+                text: msg.text,
+                ts,
+              }),
+            );
+            return;
+          }
+          case "chat_typing":
+            dispatchRef.current(
+              chatTypingReceived({
+                channel: msg.channel,
+                fromId: msg.fromId,
+                isTyping: msg.isTyping,
+              }),
+            );
+            return;
+        }
+      };
+
+      socket.onerror = () => {
+        dispatch(
+          presenceStatusChanged({
+            status: "error",
+            error: "Unable to reach the websocket service.",
+          }),
+        );
+      };
+
+      socket.onclose = (event) => {
+        if (socketRef.current === socket) socketRef.current = null;
+        if (closedByEffect) return;
+
+        const isAuthFailure = event.code === 1008;
+        const isReplacedSocket = event.code === SOCKET_REPLACED_CODE;
+        const error =
+          event.reason ||
+          (isReplacedSocket
+            ? "Another active socket is already connected for this user."
+            : "Websocket connection closed.");
+
+        dispatch(
+          presenceStatusChanged({
+            status: isAuthFailure ? "error" : "disconnected",
+            error,
+          }),
+        );
+        dispatch(chatRejected());
+
+        if (isAuthFailure || isReplacedSocket) return;
+
+        const delay = Math.min(1000 * 2 ** reconnectAttempts, 5000);
+        reconnectAttempts += 1;
+        reconnectTimer = window.setTimeout(connect, delay);
+      };
+    };
+
+    connect();
+
+    return () => {
+      closedByEffect = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      socketRef.current?.close(1000, "Presence provider remounted");
+      socketRef.current = null;
+    };
+  }, [dispatch, identity]);
+
+  const send = useCallback((payload: object): boolean => {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) return false;
+    socketRef.current.send(JSON.stringify(payload));
+    return true;
+  }, []);
+
+  const requestChat = useCallback(
+    (targetId: string) => send({ type: "chat_request", targetId }),
+    [send],
+  );
+
+  const acceptChat = useCallback(
+    (fromId: string) => send({ type: "accept_chat", targetId: fromId }),
+    [send],
+  );
+
+  const rejectChat = useCallback(
+    (fromId: string) => send({ type: "reject_chat", fromId }),
+    [send],
+  );
+
+  const sendMessage = useCallback(
+    (channel: string, text: string) =>
+      send({ type: "chat_message", channel, text }),
+    [send],
+  );
+
+  const sendTypingStatus = useCallback(
+    (channel: string, isTyping: boolean) =>
+      send({ type: "chat_typing", channel, isTyping }),
+    [send],
+  );
+
+  const endChat = useCallback(
+    (channel: string) => send({ type: "end_chat", channel }),
+    [send],
+  );
+
+  const actions = useMemo<OnlinePresenceActions>(
+    () => ({
+      requestChat,
+      acceptChat,
+      rejectChat,
+      sendMessage,
+      sendTypingStatus,
+      endChat,
+    }),
+    [
+      acceptChat,
+      endChat,
+      rejectChat,
+      requestChat,
+      sendMessage,
+      sendTypingStatus,
+    ],
+  );
+
+  return (
+    <OnlinePresenceActionsContext.Provider value={actions}>
+      {children}
+    </OnlinePresenceActionsContext.Provider>
+  );
+}
+
+export function useOnlinePresenceActions() {
+  const context = useContext(OnlinePresenceActionsContext);
+  if (!context) {
+    throw new Error(
+      "useOnlinePresenceActions must be used within OnlinePresenceProvider",
+    );
+  }
+  return context;
+}
+
+export function useOnlinePresence(): OnlinePresenceContextValue {
+  const actions = useOnlinePresenceActions();
+  const users = useAppSelector(selectOnlineUsers);
+  const userCount = useAppSelector(selectUserCount);
+  const currentUserId = useAppSelector(selectCurrentUserId);
+  const status = useAppSelector(selectPresenceStatus);
+  const error = useAppSelector(selectPresenceError);
+
+  return useMemo(
+    () => ({
+      users,
+      userCount,
+      currentUserId,
+      status,
+      error,
+      ...actions,
+    }),
+    [actions, currentUserId, error, status, userCount, users],
+  );
+}
