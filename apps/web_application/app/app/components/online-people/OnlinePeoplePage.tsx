@@ -65,9 +65,9 @@ const UserCard = memo<UserCardProps>(function UserCard({ user, isCurrentUser, ca
   const handleChat = useCallback(() => onChat(user), [onChat, user]);
 
   return (
-    <Card className="group relative w-full overflow-hidden border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+    <Card className="group relative w-full overflow-hidden border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md rounded-4xl p-0">
 
-      <CardContent className="p-5 pt-6">
+      <CardContent className="p-3">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
             <Avatar className="h-12 w-12 ring-2 ring-background">
@@ -123,7 +123,7 @@ function StatCard({ label, value, icon }: StatCardProps) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="flex min-h-[260px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center animate-in fade-in-50 duration-500">
+    <div className="flex min-h-65 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center animate-in fade-in-50 duration-500">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 ring-1 ring-border/50">
         <UsersRound className="h-6 w-6 text-muted-foreground" aria-hidden />
       </div>
@@ -229,7 +229,7 @@ export const OnlinePeoplePage: React.FC = () => {
             <p className="text-sm text-muted-foreground mt-1">{statusMsg}</p>
           </div>
 
-          <div className="grid min-w-[240px] grid-cols-2 gap-3">
+          <div className="grid min-w-60 grid-cols-2 gap-3">
             <StatCard label="Others" value={otherUsersCount} icon={<UsersRound className="h-4 w-4" aria-hidden />} />
             <StatCard label="Busy" value={busyUsersCount} icon={isConnected ? <Wifi className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden /> : <WifiOff className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden />} />
           </div>
