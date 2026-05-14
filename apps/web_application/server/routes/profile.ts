@@ -26,10 +26,10 @@ export const profileRoutes = new Elysia({ prefix: '/profile' })
           success: true,
           data: {
             name: guest.nickname || session.user.display_name,
-            handle: "",
-            age: undefined,
-            country: "",
-            bio: "",
+            handle: guest.handle || "",
+            age: guest.age,
+            country: guest.country || "",
+            bio: guest.bio || "",
             image: guest.avatar_id || session.user.avatar
           }
         };
@@ -71,10 +71,26 @@ export const profileRoutes = new Elysia({ prefix: '/profile' })
       
       await connectToDatabase();
 
+      if (handle) {
+        const existingUser = await UserModel.findOne({ handle, _id: { $ne: session.user.auth_type !== 'guest' ? session.user.user_id : null } });
+        const existingGuest = await GuestLoginModel.findOne({ handle, guest_id: { $ne: session.user.auth_type === 'guest' ? session.user.user_id : null } });
+        
+        if (existingUser || existingGuest) {
+          set.status = 400;
+          return { error: "Handle is already taken" };
+        }
+      }
+
       if (session.user.auth_type === "guest") {
         const updatedGuest = await GuestLoginModel.findOneAndUpdate(
           { guest_id: session.user.user_id },
-          { $set: { nickname: name } },
+          { $set: { 
+            nickname: name,
+            handle,
+            age,
+            country,
+            bio
+          } },
           { new: true }
         ).lean();
 
@@ -86,23 +102,15 @@ export const profileRoutes = new Elysia({ prefix: '/profile' })
           success: true,
           data: {
             name: updatedGuest.nickname,
-            handle: "",
-            age: undefined,
-            country: "",
-            bio: "",
+            handle: updatedGuest.handle,
+            age: updatedGuest.age,
+            country: updatedGuest.country,
+            bio: updatedGuest.bio,
             image: updatedGuest.avatar_id
           }
         }
       }
       
-      if (handle) {
-        const existingHandle = await UserModel.findOne({ handle, _id: { $ne: session.user.user_id } });
-        if (existingHandle) {
-          set.status = 400;
-          return { error: "Handle is already taken" };
-        }
-      }
-
       const updatedUser = await UserModel.findByIdAndUpdate(
         session.user.user_id,
         {

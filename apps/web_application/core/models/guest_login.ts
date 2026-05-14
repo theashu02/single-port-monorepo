@@ -9,6 +9,10 @@ const guestLoginSchema = new Schema(
     
     nickname:           { type: String, required: true, maxlength: 20 },
     avatar_id:          { type: String, required: true },
+    handle:             { type: String },
+    age:                { type: Number },
+    country:            { type: String },
+    bio:                { type: String },
     gender:             { type: String, enum: ["male", "female", "other", null], default: null },
     interests:          { type: [String], default: [] },
     
