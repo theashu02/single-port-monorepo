@@ -13,10 +13,19 @@ const userSchema = new Schema(
     isBlocked:        { type: Boolean, default: false },
     loginCount:       { type: Number, default: 0 },
     lastLoginAt:      { type: Date, default: Date.now },
+    handle:           { type: String, unique: true, sparse: true },
+    age:              { type: Number },
+    country:          { type: String },
+    bio:              { type: String }
   },
   { timestamps: true }
 );
 
 export type AppUser = InferSchemaType<typeof userSchema>;
 export type AppUserModel = Model<AppUser>;
-export const UserModel: AppUserModel = models.User || model("User", userSchema);
+
+if (models.User) {
+  delete models.User;
+}
+
+export const UserModel: AppUserModel = model("User", userSchema);

@@ -182,17 +182,18 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user }) {
-      if (user?.id) {
-        token.id = user.id;
-      }
-      if (!token.id && token.email) {
-        await connectToDatabase();
+      await connectToDatabase();
+      if (token.email) {
         const dbUser = await UserModel.findOne({ email: token.email });
         if (dbUser) {
           token.id = dbUser._id.toString();
           token.name = dbUser.name ?? token.name;
           token.picture = dbUser.image ?? token.picture;
+        } else if (user?.id) {
+          token.id = user.id;
         }
+      } else if (user?.id) {
+        token.id = user.id;
       }
       return token;
     },
