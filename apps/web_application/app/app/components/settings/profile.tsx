@@ -8,11 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { memo, useEffect, useState } from "react";
 import { getProfile, updateProfile, type ProfileData } from "@/core/apis/Profile_API";
+import Loader from "@/components/ui/Loader";
 
-const profileInputClassName =
-  "h-11 rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-ring focus-visible:ring-0";
-const profileTextareaClassName =
-  "rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground leading-relaxed resize-none transition-colors focus-visible:border-ring focus-visible:ring-0";
+const profileInputClassName = "h-11 rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-ring focus-visible:ring-0";
+const profileTextareaClassName = "rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground leading-relaxed resize-none transition-colors focus-visible:border-ring focus-visible:ring-0";
 
 const Profile = () => {
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -21,7 +20,7 @@ const Profile = () => {
     age: undefined,
     country: "",
     bio: "",
-    image: ""
+    image: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,12 +33,12 @@ const Profile = () => {
         const data = await getProfile();
         if (data) {
           setProfileData({
-            name: data.name || "You",
-            handle: data.handle || "@you-vibez",
+            name: data.name || "",
+            handle: data.handle || "",
             age: data.age || 22,
-            country: data.country || "🇺🇸 United States",
+            country: data.country || "United States",
             bio: data.bio || "✨ vibing through life • lo-fi enthusiast • collector of memes",
-            image: data.image || ""
+            image: data.image || "",
           });
         }
       } catch (err) {
@@ -53,9 +52,9 @@ const Profile = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setProfileData(prev => ({
+    setProfileData((prev) => ({
       ...prev,
-      [id === 'display-name' ? 'name' : id]: id === 'age' ? (value ? parseInt(value) : undefined) : value
+      [id === "display-name" ? "name" : id]: id === "age" ? (value ? parseInt(value) : undefined) : value,
     }));
     setErrorMsg("");
     setSuccessMsg("");
@@ -71,8 +70,9 @@ const Profile = () => {
         setProfileData(updated);
         setSuccessMsg("Profile updated successfully!");
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to update profile");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update profile";
+      setErrorMsg(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -80,8 +80,8 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="flex h-auto justify-center items-center">
+        <Loader />
       </div>
     );
   }
@@ -92,9 +92,7 @@ const Profile = () => {
         <div className="relative group cursor-pointer shrink-0">
           <Avatar className="h-24 w-24 ring-2 ring-border group-hover:ring-primary/50 transition-all duration-300">
             <AvatarImage src={profileData.image || "https://api.dicebear.com/7.x/adventurer/svg?seed=you-vibez"} alt="Your Avatar" className="object-cover" />
-            <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xl">
-              {profileData.name ? profileData.name.substring(0, 2).toUpperCase() : "YV"}
-            </AvatarFallback>
+            <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xl">{profileData.name ? profileData.name.substring(0, 2).toUpperCase() : "YV"}</AvatarFallback>
           </Avatar>
 
           {/* Vibrant Camera Button */}
@@ -166,6 +164,6 @@ const Profile = () => {
       </div>
     </div>
   );
-}
+};
 
 export default memo(Profile);
