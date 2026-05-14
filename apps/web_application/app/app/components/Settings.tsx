@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Settings as SettingsIcon, User, Sparkles, Lock, Bell, Palette } from "lucide-react";
+import { User, Sparkles, Lock, Bell, Palette } from "lucide-react";
 import Profile from "./settings/profile";
 import { Button } from "@/components/ui/button";
 
-// --- Types ---
 type TabId = "profile" | "preferences" | "privacy" | "notifications" | "appearance";
 
 interface NavItem {
@@ -14,7 +13,6 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-// --- Navigation Data ---
 const navItems: NavItem[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "preferences", label: "Preferences", icon: Sparkles },
@@ -28,58 +26,24 @@ export const Settings: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full h-full p-4 lg:p-6 gap-4 min-w-0 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="grid place-items-center h-12 w-12 rounded-2xl bg-linear-to-br from-violet-500 to-cyan-400">
-          <SettingsIcon className="h-5 w-5 text-white" aria-hidden="true" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black tracking-tight">Settings</h2>
-          <p className="text-xs text-white/50">Tweak your vibe • your space, your rules</p>
-        </div>
-      </div>
-
       {/* Main Layout Grid */}
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
-        {/* Sidebar Navigation */}
-        {/* <div className="glass border border-white/10 rounded-2xl p-2 h-fit space-y-1">
+        <div className="bg-card/40 backdrop-blur-md border border-border rounded-2xl p-2 h-fit space-y-1 shadow-sm">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
 
             return (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-3 h-11 rounded-xl text-sm font-medium transition ${isActive ? "bg-linear-to-r from-violet-500/20 to-cyan-400/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"}`}>
+              <Button key={item.id} variant="ghost" onClick={() => setActiveTab(item.id)} className={`w-full justify-start gap-3 h-11 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`}>
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 {item.label}
-              </button>
+              </Button>
             );
           })}
-        </div> */}
-        <div className="bg-card/40 backdrop-blur-md border border-border rounded-2xl p-2 h-fit space-y-1 shadow-sm">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = activeTab === item.id;
-
-        return (
-          <Button
-            key={item.id}
-            variant="ghost"
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full justify-start gap-3 h-11 rounded-xl text-sm font-medium transition-all ${
-              isActive
-                ? "bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            <Icon className="h-4 w-4" aria-hidden="true" />
-            {item.label}
-          </Button>
-        );
-      })}
-    </div>
+        </div>
 
         {/* Content Area */}
-        <div className="relative overflow-y-auto glass border border-white/10 rounded-2xl scrollbar-hide">
+        <div className="relative overflow-y-auto glass border border-border shadow-sm rounded-2xl scrollbar-hide">
           <div className="p-6 space-y-5">
             {activeTab === "profile" && <Profile />}
 

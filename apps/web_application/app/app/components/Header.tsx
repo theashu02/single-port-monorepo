@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Sparkles, Search, Bell } from "lucide-react";
+import { Sparkles, Search, Bell, Compass, Users, Zap, Settings, LucideIcon } from "lucide-react";
 import { DashboardTab } from "./LeftSidebar";
 import { useHeaderUser } from "./header/use-header-user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,26 +11,31 @@ interface HeaderProps {
   activeTab: DashboardTab;
 }
 
-const tabContent: Record<DashboardTab, { title: string; description: string }> = {
+const tabContent: Record<DashboardTab, { title: string; description: string; icon: LucideIcon }> = {
   Discover: {
-    title: "Discover ✨",
+    title: "Discover",
     description: "Random match with humans across the planet",
+    icon: Compass,
   },
   "Friend List": {
-    title: "Your Friends 💜",
+    title: "Your Friends",
     description: "People you've added to your circle",
+    icon: Users,
   },
   "Online People": {
-    title: "Who's Online 🟢",
+    title: "Who's Online",
     description: "248+ strangers vibing right now",
+    icon: Zap,
   },
   Notifications: {
-    title: "Notifications 🔔",
+    title: "Notifications",
     description: "Your latest vibes & alerts",
+    icon: Bell,
   },
   Settings: {
-    title: "Settings ⚙️",
-    description: "Personalize your Vibez experience",
+    title: "Settings",
+    description: "Tweak your vibe • your space, your rules",
+    icon: Settings,
   },
 };
 
@@ -49,9 +54,14 @@ export const Header = ({ activeTab }: HeaderProps) => {
       </div>
 
       {/* Title & Subtitle (Hidden on mobile) */}
-      <div className="hidden md:flex flex-col">
-        <h1 className="text-base font-bold text-foreground">{content.title}</h1>
-        <p className="text-[11px] text-muted-foreground">{content.description}</p>
+      <div className="hidden md:flex items-center gap-4">
+        <div className="grid place-items-center h-12 w-12 rounded-2xl shrink-0">
+          <content.icon className="h-8 w-8 text-accent-foreground" aria-hidden="true" />
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-base font-bold text-foreground leading-tight">{content.title}</h1>
+          <p className="text-[11px] text-muted-foreground">{content.description}</p>
+        </div>
       </div>
 
       {/* Search Bar (Visible on large screens) */}

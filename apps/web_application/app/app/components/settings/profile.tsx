@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { memo, useEffect, useState } from "react";
 import { getProfile, updateProfile, type ProfileData } from "@/core/apis/Profile_API";
 import Loader from "@/components/ui/Loader";
+import { customToast } from "@/components/ui/toast";
 
 const profileInputClassName = "h-11 rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-ring focus-visible:ring-0";
 const profileTextareaClassName = "rounded-xl border border-input bg-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground leading-relaxed resize-none transition-colors focus-visible:border-ring focus-visible:ring-0";
@@ -24,8 +25,6 @@ const Profile = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -56,23 +55,19 @@ const Profile = () => {
       ...prev,
       [id === "display-name" ? "name" : id]: id === "age" ? (value ? parseInt(value) : undefined) : value,
     }));
-    setErrorMsg("");
-    setSuccessMsg("");
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    setErrorMsg("");
-    setSuccessMsg("");
     try {
       const updated = await updateProfile(profileData);
       if (updated) {
         setProfileData(updated);
-        setSuccessMsg("Profile updated successfully!");
+        customToast("Profile updated successfully!", "success");
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update profile";
-      setErrorMsg(errorMessage);
+      customToast(errorMessage, "error");
     } finally {
       setIsSaving(false);
     }
@@ -112,9 +107,6 @@ const Profile = () => {
           </Button>
         </div>
       </div>
-
-      {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
-      {successMsg && <p className="text-sm text-green-500">{successMsg}</p>}
 
       {/* Form Fields Grid */}
       <div className="grid sm:grid-cols-2 gap-6">
