@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCcw, Check, ArrowRight, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import { RefreshCcw, Check, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { AnimatePresence, domAnimation, LazyMotion, m, MotionConfig, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,220 +109,251 @@ export default function GuestLoginPage() {
     <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion="user" transition={{ duration: 0.2 }}>
         <div className="min-h-screen bg-(--gradient-bg) flex flex-col">
-      {/* Top Navigation */}
-      <header className="flex items-center justify-between px-4 sm:px-8 py-5 max-w-2xl mx-auto w-full">
-        <div className="w-10">
-          <AnimatePresence mode="wait">
-            {step > 1 ? (
-              <m.div key="back" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-                <Button variant="ghost" size="icon" onClick={prevStep} className="rounded-full">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </m.div>
-            ) : (
-              <m.div key="back-auth">
-                <Button variant="ghost" size="icon" onClick={() => router.push("/auth")} className="rounded-full">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </m.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <m.div
-              key={i}
-              animate={{
-                width: step === i ? 28 : 8,
-              }}
-              transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 25 }}
-              className={`h-2 rounded-full transition-colors duration-300 ${step >= i ? "bg-primary" : "bg-muted"}`}
-            />
-          ))}
-        </div>
-
-        <div className="w-10 text-right text-xs text-muted-foreground font-medium">{step}/5</div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-10">
-        <div className="w-full max-w-md">
-          <AnimatePresence mode="wait" custom={direction}>
-            <m.div key={step} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={shouldReduceMotion ? { duration: 0 } : transition} className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl p-6 sm:p-8 shadow-(--shadow-soft) will-change-transform">
-              {step === 1 && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Choose your avatar</h1>
-                    <p className="text-muted-foreground text-sm">Pick a profile picture for your anonymous session.</p>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-3 sm:gap-4">
-                    {AVATAR_SEEDS.map((seed, i) => {
-                      const selected = avatarIdx === i;
-                      return (
-                        <m.button
-                          key={seed}
-                          onClick={() => {
-                            setAvatarIdx(i);
-                            setTimeout(nextStep, 200);
-                          }}
-                          whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
-                          whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-                          className={`relative aspect-square flex items-center justify-center transition-all rounded-2xl cursor-pointer z-10 ${selected ? "bg-primary/20 shadow-(--shadow-glow) border-2 border-primary" : "bg-muted hover:bg-muted/70"}`}
-                        >
-                          <div className="relative w-full h-full scale-110">
-                            <Image src={`${AvatarURL}=${seed}`} alt={seed} fill unoptimized sizes="(max-width: 640px) 22vw, 96px" className="object-cover rounded-2xl" />
-                          </div>
-
-                          {selected && (
-                            <m.div layoutId="avatar-check" className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg z-20 border-2 border-background">
-                              <Check className="w-3 h-3 stroke-3" />
-                            </m.div>
-                          )}
-                        </m.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className="space-y-6">
-                  <m.div initial={{ scale: 0.98, rotate: shouldReduceMotion ? 0 : -180 }} animate={{ scale: 1, rotate: 0 }} transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15 }} className="w-24 h-24 mx-auto rounded-3xl bg-primary/20 shadow-(--shadow-glow) border-2 border-primary overflow-hidden flex items-center justify-center">
-                    <div className="relative w-full h-full scale-110">
-                      <Image src={`${AvatarURL}=${AVATAR_SEEDS[avatarIdx]}`} alt="Avatar" fill unoptimized sizes="96px" className="object-cover" />
-                    </div>
+          {/* Top Navigation */}
+          <header className="flex items-center justify-between px-4 sm:px-8 py-5 max-w-2xl mx-auto w-full">
+            <div className="w-10">
+              <AnimatePresence mode="wait">
+                {step > 1 ? (
+                  <m.div key="back" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                    <Button variant="ghost" size="icon" onClick={prevStep} className="rounded-full">
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
                   </m.div>
-                  <div className="text-center space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">What should we call you?</h1>
-                    <p className="text-muted-foreground text-sm">Use the suggested nickname or type your own.</p>
-                  </div>
+                ) : (
+                  <m.div key="back-auth">
+                    <Button variant="ghost" size="icon" onClick={() => router.push("/auth")} className="rounded-full">
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                  </m.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Input value={nickname} onChange={(e) => setNickname(e.target.value.substring(0, 20))} className="h-14 text-lg px-4 pr-12 text-center rounded-2xl border-2 focus-visible:ring-primary/30 font-bold tracking-wider text-amber-800" placeholder="Enter nickname" />
-                      <Button type="button" size="icon" variant="ghost" onClick={() => setNickname(generateNickname())} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full hover:rotate-180 transition-transform duration-500">
-                        <RefreshCcw className="w-4 h-4" />
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <m.div
+                  key={i}
+                  animate={{
+                    width: step === i ? 28 : 8,
+                  }}
+                  transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 25 }}
+                  className={`h-2 rounded-full transition-colors duration-300 ${step >= i ? "bg-primary" : "bg-muted"}`}
+                />
+              ))}
+            </div>
+
+            <div className="w-10 text-right text-xs text-muted-foreground font-medium">{step}/5</div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-10">
+            <div className="w-full max-w-md">
+              <AnimatePresence mode="wait" custom={direction}>
+                <m.div
+                  key={step}
+                  custom={direction}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={shouldReduceMotion ? { duration: 0 } : transition}
+                  className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl p-6 sm:p-8 shadow-(--shadow-soft) will-change-transform"
+                >
+                  {step === 1 && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Choose your avatar</h1>
+                        <p className="text-muted-foreground text-sm">Pick a profile picture for your anonymous session.</p>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3 sm:gap-4">
+                        {AVATAR_SEEDS.map((seed, i) => {
+                          const selected = avatarIdx === i;
+                          return (
+                            <m.button
+                              key={seed}
+                              onClick={() => {
+                                setAvatarIdx(i);
+                                setTimeout(nextStep, 200);
+                              }}
+                              whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
+                              whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                              className={`relative aspect-square flex items-center justify-center transition-all rounded-2xl cursor-pointer z-10 ${selected ? "bg-primary/20 shadow-(--shadow-glow) border-2 border-primary" : "bg-muted hover:bg-muted/70"}`}
+                            >
+                              <div className="relative w-full h-full scale-110">
+                                <Image src={`${AvatarURL}=${seed}`} alt={seed} fill unoptimized sizes="(max-width: 640px) 22vw, 96px" className="object-cover rounded-2xl" />
+                              </div>
+
+                              {selected && (
+                                <m.div layoutId="avatar-check" className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg z-20 border-2 border-background">
+                                  <Check className="w-3 h-3 stroke-3" />
+                                </m.div>
+                              )}
+                            </m.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 2 && (
+                    <div className="space-y-6">
+                      <m.div
+                        initial={{ scale: 0.98, rotate: shouldReduceMotion ? 0 : -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15 }}
+                        className="w-24 h-24 mx-auto rounded-3xl bg-primary/20 shadow-(--shadow-glow) border-2 border-primary overflow-hidden flex items-center justify-center"
+                      >
+                        <div className="relative w-full h-full scale-110">
+                          <Image src={`${AvatarURL}=${AVATAR_SEEDS[avatarIdx]}`} alt="Avatar" fill unoptimized sizes="96px" className="object-cover" />
+                        </div>
+                      </m.div>
+                      <div className="text-center space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">What should we call you?</h1>
+                        <p className="text-muted-foreground text-sm">Use the suggested nickname or type your own.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Input value={nickname} onChange={(e) => setNickname(e.target.value.substring(0, 20))} className="h-14 text-lg px-4 pr-12 text-center rounded-2xl border-2 focus-visible:ring-primary/30 font-bold tracking-wider text-amber-800" placeholder="Enter nickname" />
+                          <Button type="button" size="icon" variant="ghost" onClick={() => setNickname(generateNickname())} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full hover:rotate-180 transition-transform duration-500">
+                            <RefreshCcw className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground text-right">{nickname.length}/20</p>
+                      </div>
+
+                      <Button onClick={nextStep} disabled={!nickname.trim()} className="w-full h-12 text-base group">
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground text-right">{nickname.length}/20</p>
-                  </div>
+                  )}
 
-                  <Button onClick={nextStep} disabled={!nickname.trim()} className="w-full h-12 text-base group">
-                    Continue
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              )}
+                  {step === 3 && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">How do you identify?</h1>
+                        <p className="text-muted-foreground text-sm">This helps us match you with the right people.</p>
+                      </div>
 
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">How do you identify?</h1>
-                    <p className="text-muted-foreground text-sm">This helps us match you with the right people.</p>
-                  </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {GENDER_OPTIONS.map((g) => {
+                          const selected = gender === g.toLowerCase();
+                          return (
+                            <m.button
+                              key={g}
+                              whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+                              whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+                              onClick={() => setGender(selected ? "" : g.toLowerCase())}
+                              className={`relative h-16 rounded-2xl border-2 font-medium transition-all ${selected ? "border-primary bg-primary/10 text-primary shadow-md" : "border-border bg-muted/40 hover:border-primary/40"}`}
+                            >
+                              {g}
+                              {selected && (
+                                <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
+                                  <Check className="w-3 h-3" />
+                                </m.div>
+                              )}
+                            </m.button>
+                          );
+                        })}
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {GENDER_OPTIONS.map((g) => {
-                      const selected = gender === g.toLowerCase();
-                      return (
-                        <m.button key={g} whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }} onClick={() => setGender(selected ? "" : g.toLowerCase())} className={`relative h-16 rounded-2xl border-2 font-medium transition-all ${selected ? "border-primary bg-primary/10 text-primary shadow-md" : "border-border bg-muted/40 hover:border-primary/40"}`}>
-                          {g}
-                          {selected && (
-                            <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5">
-                              <Check className="w-3 h-3" />
-                            </m.div>
-                          )}
-                        </m.button>
-                      );
-                    })}
-                  </div>
+                      <Button onClick={nextStep} disabled={!gender} className="w-full h-12 text-base group">
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
+                  )}
 
-                  <Button onClick={nextStep} disabled={!gender} className="w-full h-12 text-base group">
-                    Continue
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              )}
+                  {step === 4 && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">What are your interests?</h1>
+                        <p className="text-muted-foreground text-sm">Pick up to 5 topics — {interests.length}/5 selected.</p>
+                      </div>
 
-              {step === 4 && (
-                <div className="space-y-6">
-                  <div className="text-center space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">What are your interests?</h1>
-                    <p className="text-muted-foreground text-sm">Pick up to 5 topics — {interests.length}/5 selected.</p>
-                  </div>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {INTEREST_OPTIONS.map((interest) => {
+                          const selected = interests.includes(interest);
+                          return (
+                            <m.button
+                              key={interest}
+                              whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
+                              whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                              onClick={() => toggleInterest(interest)}
+                              className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${selected ? "border-transparent bg-primary text-primary-foreground shadow-md" : "border-border bg-muted/40 hover:border-primary/40"}`}
+                            >
+                              {interest}
+                              {selected && <Check className="w-3.5 h-3.5" />}
+                            </m.button>
+                          );
+                        })}
+                      </div>
 
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {INTEREST_OPTIONS.map((interest) => {
-                      const selected = interests.includes(interest);
-                      return (
-                        <m.button key={interest} whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }} whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }} onClick={() => toggleInterest(interest)} className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${selected ? "border-transparent bg-primary text-primary-foreground shadow-md" : "border-border bg-muted/40 hover:border-primary/40"}`}>
-                          {interest}
-                          {selected && <Check className="w-3.5 h-3.5" />}
-                        </m.button>
-                      );
-                    })}
-                  </div>
+                      <Button onClick={nextStep} disabled={interests.length === 0} className="w-full h-12 text-base group">
+                        Continue
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
+                  )}
 
-                  <Button onClick={nextStep} disabled={interests.length === 0} className="w-full h-12 text-base group">
-                    Continue
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              )}
+                  {step === 5 && (
+                    <div className="space-y-6">
+                      <m.div
+                        initial={{ scale: 0.98 }}
+                        animate={{ scale: 1 }}
+                        transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 12 }}
+                        className="w-20 h-20 mx-auto rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center"
+                      >
+                        <Check className="w-10 h-10 text-primary-foreground" strokeWidth={3} />
+                      </m.div>
+                      <div className="text-center space-y-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Almost there!</h1>
+                        <p className="text-muted-foreground text-sm">Just a few rules to keep the community safe.</p>
+                      </div>
 
-              {step === 5 && (
-                <div className="space-y-6">
-                  <m.div initial={{ scale: 0.98 }} animate={{ scale: 1 }} transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 12 }} className="w-20 h-20 mx-auto rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center">
-                    <Check className="w-10 h-10 text-primary-foreground" strokeWidth={3} />
-                  </m.div>
-                  <div className="text-center space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Almost there!</h1>
-                    <p className="text-muted-foreground text-sm">Just a few rules to keep the community safe.</p>
-                  </div>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3 p-4 rounded-2xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+                          <Checkbox checked={ageConfirmed} onCheckedChange={(c) => setAgeConfirmed(c === true)} className="mt-0.5 rounded-sm" />
+                          <span className="text-sm leading-relaxed">I confirm I am 18 years or older *</span>
+                        </label>
 
-                  <div className="space-y-3">
-                    <label className="flex items-start gap-3 p-4 rounded-2xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
-                      <Checkbox checked={ageConfirmed} onCheckedChange={(c) => setAgeConfirmed(c === true)} className="mt-0.5 rounded-sm" />
-                      <span className="text-sm leading-relaxed">I confirm I am 18 years or older *</span>
-                    </label>
+                        <label className="flex items-start gap-3 p-4 rounded-2xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
+                          <Checkbox checked={termsAccepted} onCheckedChange={(c) => setTermsAccepted(c === true)} className="mt-0.5 rounded-sm" />
+                          <span className="text-sm leading-relaxed">
+                            I agree to the <span className="text-primary underline">Terms</span> and <span className="text-primary underline">Privacy Policy</span> *
+                          </span>
+                        </label>
+                      </div>
 
-                    <label className="flex items-start gap-3 p-4 rounded-2xl bg-muted/40 border border-border cursor-pointer hover:bg-muted/60 transition-colors">
-                      <Checkbox checked={termsAccepted} onCheckedChange={(c) => setTermsAccepted(c === true)} className="mt-0.5 rounded-sm" />
-                      <span className="text-sm leading-relaxed">
-                        I agree to the <span className="text-primary underline">Terms</span> and <span className="text-primary underline">Privacy Policy</span> *
-                      </span>
-                    </label>
-                  </div>
+                      <AnimatePresence>
+                        {error && (
+                          <m.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-destructive text-sm text-center">
+                            {error}
+                          </m.p>
+                        )}
+                      </AnimatePresence>
 
-                  <AnimatePresence>
-                    {error && (
-                      <m.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-destructive text-sm text-center">
-                        {error}
-                      </m.p>
-                    )}
-                  </AnimatePresence>
-
-                  <Button onClick={handleSubmit} disabled={loading || !ageConfirmed || !termsAccepted} className="group w-full h-12 text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Session...
-                      </>
-                    ) : (
-                      <span className="flex items-center">
-                        Start Chatting
-                        <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 ease-out group-hover:translate-x-1" />
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </m.div>
-          </AnimatePresence>
-        </div>
-      </main>
+                      <Button onClick={handleSubmit} disabled={loading || !ageConfirmed || !termsAccepted} className="group w-full h-12 text-base bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating Session...
+                          </>
+                        ) : (
+                          <span className="flex items-center">
+                            Start Chatting
+                            <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 ease-out group-hover:translate-x-1" />
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </m.div>
+              </AnimatePresence>
+            </div>
+          </main>
         </div>
       </MotionConfig>
     </LazyMotion>

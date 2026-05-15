@@ -66,7 +66,6 @@ const UserCard = memo<UserCardProps>(function UserCard({ user, isCurrentUser, ca
 
   return (
     <Card className="group relative w-full overflow-hidden border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md rounded-4xl p-0">
-
       <CardContent className="p-3">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
@@ -86,7 +85,13 @@ const UserCard = memo<UserCardProps>(function UserCard({ user, isCurrentUser, ca
               {isCurrentUser && <Shield className="h-4 w-4 shrink-0 text-primary" aria-label="You" />}
             </div>
 
-            <Badge variant="secondary" className={cn("h-5 w-fit rounded-md px-2 text-[10px] font-semibold uppercase tracking-wider transition-colors", user.isBusy ? "bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 dark:text-amber-400" : "bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500/20 dark:text-emerald-400")}>
+            <Badge
+              variant="secondary"
+              className={cn(
+                "h-5 w-fit rounded-md px-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                user.isBusy ? "bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 dark:text-amber-400" : "bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500/20 dark:text-emerald-400",
+              )}
+            >
               {user.isBusy ? "Occupied" : "Available"}
             </Badge>
           </div>
@@ -94,7 +99,7 @@ const UserCard = memo<UserCardProps>(function UserCard({ user, isCurrentUser, ca
 
         <Separator className="my-4 transition-colors group-hover:bg-border/60" />
 
-        <Button type="button" size="sm" variant={isTargetBusy || isCurrentUser ? "secondary" : "default"} disabled={buttonDisabled} onClick={handleChat} className="w-full text-xs font-semibold shadow-none transition-all" aria-label={`${buttonLabel} — ${user.name}`}>
+        <Button type="button" size="sm" variant={isTargetBusy || isCurrentUser ? "secondary" : "default"} disabled={buttonDisabled} onClick={handleChat} className="w-full text-xs font-semibold rounded-xl shadow-none transition-all" aria-label={`${buttonLabel} — ${user.name}`}>
           <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
           {buttonLabel}
         </Button>
@@ -151,7 +156,10 @@ function FilterTabs({ filters, active, onChange }: FilterTabsProps) {
           type="button"
           aria-selected={active === f.id}
           onClick={() => onChange(f.id)}
-          className={cn("shrink-0 rounded-full px-4 h-8 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active === f.id ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground")}
+          className={cn(
+            "shrink-0 rounded-full px-4 h-8 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            active === f.id ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
         >
           {f.label}
         </button>
