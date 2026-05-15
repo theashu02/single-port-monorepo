@@ -14,7 +14,7 @@ export default function StatsSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
           {stats.map((stat) => (
-            <Card key={stat.label} className="h-full border-border bg-card transition-colors duration-300 hover:border-primary/30">
+            <Card key={stat.label} className="h-full border-border bg-card transition-colors duration-300 hover:border-primary/30 rounded-3xl">
               <CardContent className="flex flex-col items-start gap-3 p-6">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted" aria-hidden="true">
                   <stat.icon className="h-5 w-5 text-muted-foreground" />

@@ -26,7 +26,7 @@ export default function FeaturesSection() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3 xl:grid-cols-4">
           {features.map((feature) => (
-            <Card key={feature.title} className="group h-full border-border bg-card transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+            <Card key={feature.title} className="group h-full border-border bg-card transition-all duration-300 hover:border-primary/20 hover:shadow-sm rounded-3xl">
               <CardContent className="flex flex-col items-start gap-4 p-6">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted transition-colors duration-300 group-hover:bg-primary/10" aria-hidden="true">
                   <feature.icon className="h-5 w-5 text-muted-foreground transition-colors duration-300 group-hover:text-primary" />

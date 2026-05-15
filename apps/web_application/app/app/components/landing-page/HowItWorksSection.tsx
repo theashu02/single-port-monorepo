@@ -24,7 +24,7 @@ export default function HowItWorksSection() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5">
           {steps.map((step) => (
-            <Card key={step.number} className="group h-full border-border bg-card transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+            <Card key={step.number} className="group h-full border-border bg-card transition-all duration-300 hover:border-primary/20 hover:shadow-sm rounded-3xl">
               <CardContent className="flex flex-col items-start gap-4 p-6">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted transition-colors duration-300 group-hover:bg-primary/10" aria-hidden="true">

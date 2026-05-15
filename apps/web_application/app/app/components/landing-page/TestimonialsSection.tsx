@@ -24,7 +24,7 @@ export default function TestimonialsSection() {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
           {testimonials.map((testimonial) => (
-            <Card key={testimonial.name} className="h-full border-border bg-card transition-all duration-300 hover:border-primary/15 hover:shadow-sm">
+            <Card key={testimonial.name} className="h-full border-border bg-card transition-all duration-300 hover:border-primary/15 hover:shadow-sm rounded-3xl">
               <CardContent className="flex flex-col gap-4 p-6">
                 <Quote className="h-5 w-5 text-muted-foreground/40" aria-hidden="true" />
                 <p className="flex-1 text-sm leading-relaxed text-foreground">{testimonial.quote}</p>
