@@ -1,50 +1,57 @@
+import Image from "next/image";
+
+import { BUN_LOGO, ELYSIA_JS, METAMASK_LOGO, LIB_P2P } from "@/core/constants/config";
+
 const technologies = [
   {
-    name: "Next.js",
-    svg: "M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z",
-  },
-  { name: "TypeScript", svg: "M3 3h18v18H3V3zm10.5 12.18V16h1.8v-5.2h1.86v-1.5h-5.52v1.5h1.86v5.18h.01zm-4.2-3.18c.66 0 1.14.42 1.14 1.02 0 .6-.48 1.02-1.14 1.02H7.5v1.5h2.1c1.14 0 1.98-.78 1.98-1.92 0-.96-.66-1.62-1.56-1.86l1.56-2.34H10.2l-1.38 2.16H7.5V9h-1.8v6h3.6z" },
-  {
-    name: "Tailwind CSS",
-    svg: "M12 6c-2.67 0-4.33 1.33-5 4 1-1.33 2.17-1.83 3.5-1.5.76.19 1.31.74 1.91 1.35.98 1 2.09 2.15 4.59 2.15 2.67 0 4.33-1.33 5-4-1 1.33-2.17 1.83-3.5 1.5-.76-.19-1.3-.74-1.91-1.35C15.61 7.15 14.51 6 12 6zm-5 6c-2.67 0-4.33 1.33-5 4 1-1.33 2.17-1.83 3.5-1.5.76.19 1.3.74 1.91 1.35C8.52 16.85 9.62 18 12.09 18c2.67 0 4.33-1.33 5-4-1 1.33-2.17 1.83-3.5 1.5-.76-.19-1.3-.74-1.91-1.35C10.61 13.15 9.51 12 7 12z",
-  },
-  { name: "Bun", svg: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2V7zm0 8h2v2h-2v-2z" },
-  {
-    name: "WebSocket",
-    svg: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
+    image: BUN_LOGO,
+    name: "Bun",
   },
   {
-    name: "PostgreSQL",
-    svg: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
+    image: ELYSIA_JS,
+    name: "ElysiaJS",
   },
-  { name: "Redis", svg: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" },
-  { name: "Docker", svg: "M20 10.6V8.4h-2.2v2.2h-2.2V8.4h-2.2v2.2H11V8.4H8.8v2.2H6.6V8.4H4.4v2.2H2.2V14c0 2.3 1.9 4.2 4.2 4.2h9.2c2.3 0 4.2-1.9 4.2-4.2v-3.4h-2.2v-2.2H20zm-14 4.2H4.4v-2.2h1.6v2.2zm3.4 0H7.8v-2.2h1.6v2.2zm3.4 0h-1.6v-2.2h1.6v2.2zm3.4 0h-1.6v-2.2h1.6v2.2z" },
   {
-    name: "AWS",
-    svg: "M6.763 10.036c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 0 1-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 0 1-.287-.375 6.18 6.18 0 0 1-.248-.471c-.622.734-1.405 1.1-2.35 1.1-.67 0-1.206-.191-1.598-.575-.392-.384-.59-.894-.59-1.533 0-.678.239-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367a4.16 4.16 0 0 0-.846.096c-.288.064-.568.144-.846.24-.128.048-.224.072-.288.088-.063.016-.111.024-.143.024-.128 0-.191-.096-.191-.296v-.463c0-.151.016-.263.056-.327a.598.598 0 0 1 .224-.191 4.57 4.57 0 0 1 1.022-.36c.415-.104.862-.16 1.341-.16.94 0 1.626.216 2.066.647.44.432.663 1.086.663 1.963v2.586zm-3.24 1.214c.263 0 .534-.048.822-.144.287-.096.543-.271.758-.519.128-.152.224-.32.272-.512.048-.191.08-.423.08-.695v-.335a6.66 6.66 0 0 0-.735-.136 6.02 6.02 0 0 0-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.919 0 .375.095.655.295.846.191.2.47.304.838.304zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 5.55a1.398 1.398 0 0 1-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 0 1 .32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.262 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 0 1 .311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 0 1-.056.2l-1.923 6.17c-.048.16-.104.264-.168.312-.064.048-.168.08-.303.08h-.687c-.151 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32l-1.238-5.148-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08h-.687zm10.256.215c-.415 0-.83-.048-1.229-.143a8.32 8.32 0 0 1-1.014-.288c-.16-.064-.272-.136-.312-.208-.04-.08-.064-.168-.064-.256v-.463c0-.192.071-.288.2-.288a.47.47 0 0 1 .16.032c.047.016.12.048.2.08.279.12.583.216.91.28.335.064.655.096.982.096.52 0 .926-.088 1.206-.264.272-.176.415-.423.415-.743 0-.216-.08-.392-.239-.535-.16-.144-.463-.272-.903-.392l-1.294-.4c-.654-.2-1.141-.503-1.445-.887-.303-.384-.463-.822-.463-1.301 0-.375.08-.71.24-1.006.16-.296.375-.559.647-.775.272-.216.583-.375.95-.487a3.95 3.95 0 0 1 1.189-.175c.207 0 .423.016.638.048.224.032.431.08.623.128.192.056.368.112.519.176.16.064.279.128.36.2.08.063.136.136.168.224.032.08.048.176.048.28v.423c0 .2-.072.296-.2.296-.071 0-.184-.04-.336-.112a3.79 3.79 0 0 0-1.109-.311 3.77 3.77 0 0 0-.878-.096c-.471 0-.846.072-1.11.224a.728.728 0 0 0-.383.647c0 .216.087.4.255.543.168.144.494.288.966.423l1.245.383c.647.2 1.118.487 1.397.855.279.375.415.806.415 1.3 0 .384-.079.742-.232 1.062-.16.32-.375.599-.655.83-.28.232-.607.407-.998.527-.4.127-.814.2-1.253.2z",
+    image: METAMASK_LOGO,
+    name: "MetaMask",
   },
-  { name: "ElysiaJS", svg: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" },
+  {
+    image: LIB_P2P,
+    name: "libp2p",
+  },
 ];
 
 export default function PoweredBySection() {
   return (
-    <section className="relative border-y border-border bg-muted/30 py-20 md:py-28" aria-labelledby="powered-by-heading">
+    <section className="relative overflow-hidden border-y border-border bg-muted/30 py-20 md:py-28" aria-labelledby="powered-by-heading">
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-14 flex flex-col items-center text-center">
-          <span className="mb-4 inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Infrastructure</span>
+          <span className="mb-4 inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+            Powered By These
+          </span>
           <h2 id="powered-by-heading" className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Powered by modern real-time technologies
+            Core technologies behind the landing experience
           </h2>
-          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">Built on scalable infrastructure optimized for real-time conversations and social discovery.</p>
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+            The platform is powered by a focused stack chosen for speed, wallet-native onboarding, and crisp real-time communication.
+          </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 sm:grid-cols-5 md:gap-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-8 md:gap-x-14">
           {technologies.map((tech) => (
-            <div key={tech.name} className="group flex flex-col items-center gap-3 rounded-2xl border border-border bg-background p-4 transition-all duration-300 hover:border-muted-foreground/20 md:p-5">
-              <svg viewBox="0 0 24 24" className="h-8 w-8 text-muted-foreground transition-colors duration-300 group-hover:text-foreground" fill="currentColor" aria-hidden="true">
-                <path d={tech.svg} />
-              </svg>
-              <span className="text-xs font-medium text-muted-foreground transition-colors duration-300 group-hover:text-foreground">{tech.name}</span>
+            <div
+              key={tech.name}
+              className="group flex items-center justify-center"
+            >
+              <Image
+                src={tech.image}
+                alt={tech.name}
+                width={200}
+                height={88}
+                className="h-16 w-auto object-contain transition-all duration-300 group-hover:scale-105 md:h-20 lg:h-24"
+                sizes="(max-width: 768px) 38vw, (max-width: 1280px) 20vw, 200px"
+              />
             </div>
           ))}
         </div>
