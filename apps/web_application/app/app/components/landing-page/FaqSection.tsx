@@ -9,26 +9,31 @@ const faqs = [
 
 export default function FaqSection() {
   return (
-    <section id="faq" className="relative border-y border-border bg-muted/30 py-20 md:py-28" aria-labelledby="faq-heading">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 flex flex-col items-center text-center">
-          <span className="mb-4 inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">FAQ</span>
-          <h2 id="faq-heading" className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+    <section id="faq" className="relative border-y border-border bg-muted/30 py-14 md:py-20" aria-labelledby="faq-heading">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
+        <div>
+          <span className="mb-4 inline-flex items-center rounded-full border border-border bg-background px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground">FAQ</span>
+          <h2 id="faq-heading" className="max-w-md text-3xl font-bold tracking-[-0.035em] text-foreground sm:text-4xl">
             Questions? Answered.
           </h2>
-          <p className="max-w-xl text-base leading-relaxed text-muted-foreground">Everything you need to know before jumping in. If you have more questions, our community is always happy to help.</p>
+          <p className="mt-4 max-w-md text-base leading-7 tracking-[0.01em] text-muted-foreground">Everything you need to know before jumping in. The answers stay short, practical, and focused on trust.</p>
+
+          <div className="mt-6 rounded-3xl border border-border bg-background p-4">
+            <p className="text-sm font-semibold tracking-[0.04em] text-foreground">Still unsure?</p>
+            <p className="mt-1 text-sm leading-6 tracking-[0.01em] text-muted-foreground">Start with a random match, keep control over what you share, and leave any chat instantly.</p>
+          </div>
         </div>
 
         <div className="space-y-3">
           {faqs.map((faq) => (
-            <details key={faq.question} className="group rounded-xl border border-border bg-card px-5 transition-colors duration-300 open:border-primary/20">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-left text-sm font-semibold text-foreground marker:hidden">
+            <details key={faq.question} className="group rounded-[1.25rem] border border-border bg-card px-5 shadow-sm transition-colors duration-300 open:border-primary/25 open:bg-background">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-left text-sm font-semibold tracking-[0.02em] text-foreground marker:hidden">
                 {faq.question}
                 <span className="text-muted-foreground transition-transform group-open:rotate-45" aria-hidden="true">
                   +
                 </span>
               </summary>
-              <p className="pb-4 text-sm leading-relaxed text-muted-foreground">{faq.answer}</p>
+              <p className="pb-4 text-sm leading-6 tracking-[0.01em] text-muted-foreground">{faq.answer}</p>
             </details>
           ))}
         </div>
