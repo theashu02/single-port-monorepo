@@ -7,13 +7,27 @@ import {
 } from "./features/presence/handlers";
 import { configureLoggerMetrics, logInfo } from "./logger";
 import { chatStore } from "./state/chat-store";
-import { presenceStore } from "./state/presence-store";
+import {
+  connectRealtimeStore,
+  realtimeStore,
+  subscribeRealtimeBus,
+} from "./state/redis-realtime";
 import { toRealtimeSocket } from "./transport/socket";
 
 export const configureServiceMetrics = () => {
+  let latestOnlineUsers = 0;
+  let latestBusyUsers = 0;
+
+  setInterval(() => {
+    void realtimeStore.totals().then((totals) => {
+      latestOnlineUsers = totals.online;
+      latestBusyUsers = totals.busy;
+    });
+  }, 5000).unref();
+
   configureLoggerMetrics(() => ({
-    onlineUsers: presenceStore.size(),
-    busyUsers: chatStore.busyUserCount(),
+    onlineUsers: latestOnlineUsers,
+    busyUsers: latestBusyUsers,
     pendingInvites: chatStore.pendingInviteCount(),
     activeChannels: chatStore.activeChannelCount(),
   }));
@@ -26,21 +40,38 @@ export const createWebSocketService = () => {
     .get("/health", () => ({ ok: true }))
     .ws(WS_PATH, {
       open(ws) {
-        handleSocketOpen(toRealtimeSocket(ws));
+        void handleSocketOpen(toRealtimeSocket(ws)).catch((error) => {
+          logInfo("socket.open_failed", {
+            error: error instanceof Error ? error.message : "unknown",
+          });
+          ws.close(1011, "Unable to open websocket");
+        });
       },
 
       message(ws, rawMessage) {
-        handleSocketMessage(toRealtimeSocket(ws), rawMessage);
+        void handleSocketMessage(toRealtimeSocket(ws), rawMessage).catch(
+          (error) => {
+            logInfo("socket.message_failed", {
+              error: error instanceof Error ? error.message : "unknown",
+            });
+          },
+        );
       },
 
       close(ws) {
-        handleSocketClose(toRealtimeSocket(ws));
+        void handleSocketClose(toRealtimeSocket(ws)).catch((error) => {
+          logInfo("socket.close_failed", {
+            error: error instanceof Error ? error.message : "unknown",
+          });
+        });
       },
     });
 };
 
-export const startWebSocketService = (port = SERVICE_PORT) => {
+export const startWebSocketService = async (port = SERVICE_PORT) => {
+  await connectRealtimeStore();
   const app = createWebSocketService().listen(port);
+  await subscribeRealtimeBus((topic, data) => app.server?.publish(topic, data));
 
   logInfo("service.started", {
     port: app.server?.port ?? null,

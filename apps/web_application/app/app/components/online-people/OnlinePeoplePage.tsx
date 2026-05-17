@@ -15,7 +15,7 @@ import type { OnlineUser } from "./OnlinePresenceProvider";
 import { useOnlinePresence } from "./OnlinePresenceProvider";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { chatRequested, selectChatPeer, selectChatPhase, selectIsLocalChatLocked, type ChatPhase } from "@/lib/redux/slices/chatSlice";
-import { selectBusyUsersCount, selectOtherUsersCount } from "@/lib/redux/slices/presenceSlice";
+import { selectBusyUsersCount, selectLoadedUserCount, selectOtherUsersCount } from "@/lib/redux/slices/presenceSlice";
 
 type PresenceFilter = "all" | "others" | "you";
 
@@ -169,13 +169,14 @@ function FilterTabs({ filters, active, onChange }: FilterTabsProps) {
 }
 
 export const OnlinePeoplePage: React.FC = () => {
-  const { users, currentUserId, status, error, requestChat } = useOnlinePresence();
+  const { users, userCount, currentUserId, status, error, requestChat } = useOnlinePresence();
   const dispatch = useAppDispatch();
   const chatPhase = useAppSelector(selectChatPhase);
   const chatPeer = useAppSelector(selectChatPeer);
   const isLocalChatLocked = useAppSelector(selectIsLocalChatLocked);
   const otherUsersCount = useAppSelector(selectOtherUsersCount);
   const busyUsersCount = useAppSelector(selectBusyUsersCount);
+  const loadedUserCount = useAppSelector(selectLoadedUserCount);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<PresenceFilter>("all");
 
@@ -212,7 +213,7 @@ export const OnlinePeoplePage: React.FC = () => {
   );
 
   const filters: Array<{ id: PresenceFilter; label: string }> = [
-    { id: "all", label: `All (${users.length})` },
+    { id: "all", label: `Loaded (${loadedUserCount})` },
     { id: "others", label: `Others (${otherUsersCount})` },
     { id: "you", label: "You" },
   ];
@@ -232,9 +233,11 @@ export const OnlinePeoplePage: React.FC = () => {
               <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{isConnected ? "Live Presence" : "Connecting"}</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-              <span className="text-primary">{users.length}</span> {users.length === 1 ? "User" : "Users"} Online
+              <span className="text-primary">{userCount}</span> {userCount === 1 ? "User" : "Users"} Online
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">{statusMsg}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {statusMsg} Showing {loadedUserCount} active profiles to keep the realtime view fast.
+            </p>
           </div>
 
           <div className="grid min-w-60 grid-cols-2 gap-3">

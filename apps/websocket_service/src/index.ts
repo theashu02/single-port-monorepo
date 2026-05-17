@@ -13,5 +13,5 @@ export type * from "./types";
 import { startWebSocketService } from "./server";
 
 if (import.meta.main) {
-  startWebSocketService();
+  void startWebSocketService();
 }

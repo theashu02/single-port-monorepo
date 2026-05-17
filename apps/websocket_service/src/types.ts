@@ -52,6 +52,15 @@ export interface EndChatMessage {
 export interface OnlineUsersSnapshotEvent {
   type: "online_users_snapshot";
   users: OnlinePresenceUser[];
+  totalOnline: number;
+  totalBusy: number;
+  sampleSize: number;
+}
+
+export interface PresenceCountsEvent {
+  type: "presence_counts";
+  online: number;
+  busy: number;
 }
 
 export interface UserJoinedEvent {

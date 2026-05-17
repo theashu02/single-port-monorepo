@@ -6,6 +6,7 @@ import {
 } from "../../messages/client-message";
 import { chatStore, roomId } from "../../state/chat-store";
 import { presenceStore } from "../../state/presence-store";
+import { publishRealtime, realtimeStore } from "../../state/redis-realtime";
 import type { RealtimeSocket } from "../../transport/socket";
 import type {
   ChatInviteEvent,
@@ -16,11 +17,20 @@ import type {
 } from "../../types";
 import {
   publishBusyStatus,
-  publishPresenceSnapshot,
+  publishPresenceCounts,
   sendPresenceSnapshot,
 } from "../presence/events";
 
-export const handleSocketMessage = (
+const publishLocalAndRemote = async (
+  socket: RealtimeSocket,
+  topic: string,
+  data: string,
+) => {
+  socket.publish(topic, data);
+  await publishRealtime(topic, data);
+};
+
+export const handleSocketMessage = async (
   socket: RealtimeSocket,
   rawMessage: unknown,
 ) => {
@@ -34,7 +44,20 @@ export const handleSocketMessage = (
   }
 
   const userId = identity.id;
-  const presence = presenceStore.getUser(userId);
+  const connectionToken = presenceStore.getConnectionToken(socket.raw);
+  if (
+    !connectionToken ||
+    !(await realtimeStore.ownsConnection(userId, connectionToken))
+  ) {
+    logWarn("message.rejected", {
+      reason: "replaced_connection",
+      userId,
+      messageType: rawMessageKind(rawMessage),
+    });
+    return;
+  }
+
+  const presence = await realtimeStore.getUser(userId);
   if (!presence) {
     logWarn("message.rejected", {
       reason: "missing_presence",
@@ -70,7 +93,7 @@ export const handleSocketMessage = (
       targetId,
     });
 
-    if (targetId === userId || !presenceStore.hasUser(targetId)) {
+    if (targetId === userId || !(await realtimeStore.hasUser(targetId))) {
       logWarn("chat.request_rejected", {
         reason: targetId === userId ? "self_request" : "target_offline",
         fromId: userId,
@@ -84,7 +107,7 @@ export const handleSocketMessage = (
       return;
     }
 
-    if (chatStore.hasBusyUser(targetId)) {
+    if (await realtimeStore.getBusyChannel(targetId)) {
       logInfo("chat.request_busy", {
         reason: "target_busy",
         fromId: userId,
@@ -94,7 +117,7 @@ export const handleSocketMessage = (
       return;
     }
 
-    if (chatStore.hasBusyUser(userId)) {
+    if (await realtimeStore.getBusyChannel(userId)) {
       logInfo("chat.request_busy", {
         reason: "caller_busy",
         fromId: userId,
@@ -105,15 +128,19 @@ export const handleSocketMessage = (
     }
 
     const channel = roomId(userId, targetId);
-    const busyUsers = chatStore.markChannelBusy(channel, userId, targetId);
+    const busyUsers = await realtimeStore.markChannelBusy(channel, userId, targetId);
+    if (!busyUsers) {
+      socket.send(JSON.stringify({ type: "chat_busy", byId: targetId }));
+      return;
+    }
     logInfo("chat.invite_created", {
       channel,
       fromId: userId,
       targetId,
     });
-    publishBusyStatus(socket.publish.bind(socket), busyUsers);
-    publishPresenceSnapshot(socket.publish.bind(socket));
-    sendPresenceSnapshot(socket.send.bind(socket), {
+    await publishBusyStatus(socket.publish.bind(socket), busyUsers);
+    await publishPresenceCounts(socket.publish.bind(socket));
+    await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_request",
     });
@@ -125,7 +152,11 @@ export const handleSocketMessage = (
       from: presence,
       channel,
     };
-    socket.publish(userTopic(targetId), JSON.stringify(inviteEvent));
+    await publishLocalAndRemote(
+      socket,
+      userTopic(targetId),
+      JSON.stringify(inviteEvent),
+    );
     logInfo("chat.invite_sent", {
       channel,
       fromId: userId,
@@ -134,22 +165,25 @@ export const handleSocketMessage = (
     });
 
     const timer = setTimeout(() => {
-      const releasedUsers = chatStore.releaseChannel(channel);
-      logInfo("chat.invite_expired", {
-        channel,
-        fromId: userId,
-        targetId,
-      });
+      void (async () => {
+        if (!(await realtimeStore.isPendingChannel(channel))) return;
+        const releasedUsers = await realtimeStore.releaseChannel(channel);
+        logInfo("chat.invite_expired", {
+          channel,
+          fromId: userId,
+          targetId,
+        });
 
-      const expiredEvent = { type: "chat_expired", byId: targetId };
-      socket.send(JSON.stringify(expiredEvent));
-      socket.unsubscribe(channel);
-      publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-      publishPresenceSnapshot(socket.publish.bind(socket));
-      sendPresenceSnapshot(socket.send.bind(socket), {
-        userId,
-        reason: "invite_expired",
-      });
+        const expiredEvent = { type: "chat_expired", byId: targetId };
+        socket.send(JSON.stringify(expiredEvent));
+        socket.unsubscribe(channel);
+        await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+        await publishPresenceCounts(socket.publish.bind(socket));
+        await sendPresenceSnapshot(socket.send.bind(socket), {
+          userId,
+          reason: "invite_expired",
+        });
+      })();
     }, INVITE_TIMEOUT_MS);
 
     chatStore.setInviteTimer(channel, timer);
@@ -159,7 +193,7 @@ export const handleSocketMessage = (
   if (message.type === "accept_chat") {
     const targetId = message.targetId;
     const channel = roomId(userId, targetId);
-    const members = chatStore.getChannelMembers(channel);
+    const members = await realtimeStore.getChannelMembers(channel);
     logInfo("chat.accept_received", {
       channel,
       fromId: userId,
@@ -177,11 +211,12 @@ export const handleSocketMessage = (
     }
 
     chatStore.clearInviteTimer(channel);
+    await realtimeStore.openChannel(channel);
     socket.subscribe(channel);
 
     const readyEvent: ChatReadyEvent = { type: "chat_ready", channel };
     socket.send(JSON.stringify(readyEvent));
-    socket.publish(channel, JSON.stringify(readyEvent));
+    await publishLocalAndRemote(socket, channel, JSON.stringify(readyEvent));
     logInfo("chat.ready_published", {
       channel,
       acceptedById: userId,
@@ -199,7 +234,7 @@ export const handleSocketMessage = (
       rejectedById: userId,
     });
 
-    if (chatStore.getBusyChannel(userId) !== channel) {
+    if ((await realtimeStore.getBusyChannel(userId)) !== channel) {
       logWarn("chat.reject_ignored", {
         reason: "user_not_in_channel",
         channel,
@@ -209,16 +244,20 @@ export const handleSocketMessage = (
       return;
     }
 
-    const releasedUsers = chatStore.releaseChannel(channel);
+    const releasedUsers = await realtimeStore.releaseChannel(channel);
 
     const rejectedEvent: ChatRejectedEvent = {
       type: "chat_rejected",
       byId: userId,
     };
-    socket.publish(userTopic(fromId), JSON.stringify(rejectedEvent));
-    publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-    publishPresenceSnapshot(socket.publish.bind(socket));
-    sendPresenceSnapshot(socket.send.bind(socket), {
+    await publishLocalAndRemote(
+      socket,
+      userTopic(fromId),
+      JSON.stringify(rejectedEvent),
+    );
+    await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+    await publishPresenceCounts(socket.publish.bind(socket));
+    await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_rejected",
     });
@@ -237,7 +276,7 @@ export const handleSocketMessage = (
       endedById: userId,
     });
 
-    if (chatStore.getBusyChannel(userId) !== channel) {
+    if ((await realtimeStore.getBusyChannel(userId)) !== channel) {
       logWarn("chat.end_ignored", {
         reason: "user_not_in_channel",
         channel,
@@ -246,7 +285,7 @@ export const handleSocketMessage = (
       return;
     }
 
-    const releasedUsers = chatStore.releaseChannel(channel);
+    const releasedUsers = await realtimeStore.releaseChannel(channel);
     const otherId = releasedUsers.find((id) => id !== userId);
 
     if (otherId) {
@@ -254,12 +293,16 @@ export const handleSocketMessage = (
         type: "chat_rejected",
         byId: userId,
       };
-      socket.publish(userTopic(otherId), JSON.stringify(rejectedEvent));
+      await publishLocalAndRemote(
+        socket,
+        userTopic(otherId),
+        JSON.stringify(rejectedEvent),
+      );
     }
 
-    publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-    publishPresenceSnapshot(socket.publish.bind(socket));
-    sendPresenceSnapshot(socket.send.bind(socket), {
+    await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+    await publishPresenceCounts(socket.publish.bind(socket));
+    await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_ended",
     });
@@ -272,7 +315,7 @@ export const handleSocketMessage = (
   }
 
   if (message.type === "chat_typing") {
-    if (chatStore.getBusyChannel(userId) !== message.channel) {
+    if ((await realtimeStore.getBusyChannel(userId)) !== message.channel) {
       return;
     }
 
@@ -282,11 +325,15 @@ export const handleSocketMessage = (
       fromId: userId,
       isTyping: message.isTyping,
     };
-    socket.publish(message.channel, JSON.stringify(typingEvent));
+    await publishLocalAndRemote(
+      socket,
+      message.channel,
+      JSON.stringify(typingEvent),
+    );
     return;
   }
 
-  if (chatStore.getBusyChannel(userId) !== message.channel) {
+  if ((await realtimeStore.getBusyChannel(userId)) !== message.channel) {
     logWarn("chat.message_ignored", {
       reason: "user_not_in_channel",
       channel: message.channel,
@@ -301,7 +348,11 @@ export const handleSocketMessage = (
     fromId: userId,
     text: message.text,
   };
-  socket.publish(message.channel, JSON.stringify(chatEvent));
+  await publishLocalAndRemote(
+    socket,
+    message.channel,
+    JSON.stringify(chatEvent),
+  );
   logInfo("chat.message_published", {
     channel: message.channel,
     fromId: userId,

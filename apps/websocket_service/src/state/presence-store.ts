@@ -7,6 +7,7 @@ export interface ActiveConnection {
 
 const onlineUsers = new Map<string, OnlineUser>();
 const connectionIdentity = new Map<object, OnlineUser>();
+const connectionTokens = new Map<object, string>();
 const activeConnections = new Map<string, ActiveConnection>();
 
 export const presenceStore = {
@@ -21,6 +22,10 @@ export const presenceStore = {
   setConnectionIdentity: (raw: object, user: OnlineUser) =>
     connectionIdentity.set(raw, user),
   deleteConnectionIdentity: (raw: object) => connectionIdentity.delete(raw),
+  getConnectionToken: (raw: object) => connectionTokens.get(raw),
+  setConnectionToken: (raw: object, token: string) =>
+    connectionTokens.set(raw, token),
+  deleteConnectionToken: (raw: object) => connectionTokens.delete(raw),
 
   getActiveConnection: (userId: string) => activeConnections.get(userId),
   setActiveConnection: (userId: string, connection: ActiveConnection) =>

@@ -23,6 +23,7 @@ import {
 } from "@/lib/redux/slices/chatSlice";
 import {
   onlineUsersSnapshotReceived,
+  presenceCountsReceived,
   presenceIdentityChanged,
   presenceReset,
   presenceStatusChanged,
@@ -90,7 +91,14 @@ function parseNonEmptyString(value: unknown): string | null {
 }
 
 type ServerEvent =
-  | { type: "online_users_snapshot"; users: OnlineUser[] }
+  | {
+      type: "online_users_snapshot";
+      users: OnlineUser[];
+      totalOnline: number;
+      totalBusy: number;
+      sampleSize: number;
+    }
+  | { type: "presence_counts"; online: number; busy: number }
   | { type: "user_joined"; user: OnlineUser }
   | { type: "user_left"; userId: string }
   | { type: "user_status_changed"; userId: string; isBusy: boolean }
@@ -123,7 +131,27 @@ function parseServerEvent(raw: string): ServerEvent | null {
       const users = parsed.users
         .map(parseOnlineUser)
         .filter((user): user is OnlineUser => user !== null);
-      return { type: "online_users_snapshot", users };
+      return {
+        type: "online_users_snapshot",
+        users,
+        totalOnline:
+          typeof parsed.totalOnline === "number" ? parsed.totalOnline : users.length,
+        totalBusy:
+          typeof parsed.totalBusy === "number"
+            ? parsed.totalBusy
+            : users.filter((user) => user.isBusy).length,
+        sampleSize:
+          typeof parsed.sampleSize === "number" ? parsed.sampleSize : users.length,
+      };
+    }
+    case "presence_counts": {
+      if (typeof parsed.online !== "number" || typeof parsed.busy !== "number")
+        return null;
+      return {
+        type: "presence_counts",
+        online: Math.max(0, parsed.online),
+        busy: Math.max(0, parsed.busy),
+      };
     }
     case "user_joined": {
       const user = parseOnlineUser(parsed.user);
@@ -351,7 +379,19 @@ export function OnlinePresenceProvider({
 
         switch (msg.type) {
           case "online_users_snapshot":
-            dispatchRef.current(onlineUsersSnapshotReceived(msg.users));
+            dispatchRef.current(
+              onlineUsersSnapshotReceived({
+                users: msg.users,
+                totalOnline: msg.totalOnline,
+                totalBusy: msg.totalBusy,
+                sampleSize: msg.sampleSize,
+              }),
+            );
+            return;
+          case "presence_counts":
+            dispatchRef.current(
+              presenceCountsReceived({ online: msg.online, busy: msg.busy }),
+            );
             return;
           case "user_joined":
             dispatchRef.current(userJoinedReceived(msg.user));

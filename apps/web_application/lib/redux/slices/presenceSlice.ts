@@ -22,6 +22,9 @@ export type PresenceStatus =
 interface PresenceState {
   ids: string[];
   entities: Record<string, OnlineUser>;
+  totalOnline: number;
+  totalBusy: number;
+  sampleSize: number;
   currentUserId: string | null;
   status: PresenceStatus;
   error: string | null;
@@ -30,6 +33,9 @@ interface PresenceState {
 const initialState: PresenceState = {
   ids: [],
   entities: {},
+  totalOnline: 0,
+  totalBusy: 0,
+  sampleSize: 0,
   currentUserId: null,
   status: "resolving-user",
   error: null,
@@ -40,6 +46,26 @@ const upsertUser = (state: PresenceState, user: OnlineUser) => {
     state.ids.push(user.id);
   }
   state.entities[user.id] = user;
+};
+
+const trimVisibleUsers = (
+  state: PresenceState,
+  protectedUserId?: string,
+) => {
+  const limit = state.sampleSize;
+  if (limit <= 0) return;
+
+  while (state.ids.length > limit) {
+    const removeIndex = state.ids.findIndex(
+      (id) => id !== state.currentUserId && id !== protectedUserId,
+    );
+    if (removeIndex < 0) return;
+
+    const [removedId] = state.ids.splice(removeIndex, 1);
+    if (removedId) {
+      delete state.entities[removedId];
+    }
+  }
 };
 
 const presenceSlice = createSlice({
@@ -68,22 +94,46 @@ const presenceSlice = createSlice({
     ) {
       state.ids = [];
       state.entities = {};
+      state.totalOnline = 0;
+      state.totalBusy = 0;
+      state.sampleSize = 0;
       state.currentUserId = null;
       state.status = action.payload?.status ?? "unauthenticated";
       state.error = action.payload?.error ?? null;
     },
 
-    onlineUsersSnapshotReceived(state, action: PayloadAction<OnlineUser[]>) {
+    onlineUsersSnapshotReceived(
+      state,
+      action: PayloadAction<{
+        users: OnlineUser[];
+        totalOnline: number;
+        totalBusy: number;
+        sampleSize: number;
+      }>,
+    ) {
       state.ids = [];
       state.entities = {};
+      state.totalOnline = action.payload.totalOnline;
+      state.totalBusy = action.payload.totalBusy;
+      state.sampleSize = action.payload.sampleSize;
 
-      for (const user of action.payload) {
+      for (const user of action.payload.users) {
         upsertUser(state, user);
       }
     },
 
+    presenceCountsReceived(
+      state,
+      action: PayloadAction<{ online: number; busy: number }>,
+    ) {
+      state.totalOnline = action.payload.online;
+      state.totalBusy = action.payload.busy;
+    },
+
     userJoinedReceived(state, action: PayloadAction<OnlineUser>) {
       upsertUser(state, action.payload);
+      state.totalOnline = Math.max(state.totalOnline, state.ids.length);
+      trimVisibleUsers(state, action.payload.id);
     },
 
     userLeftReceived(state, action: PayloadAction<string>) {
@@ -114,6 +164,7 @@ export const {
   presenceStatusChanged,
   presenceReset,
   onlineUsersSnapshotReceived,
+  presenceCountsReceived,
   userJoinedReceived,
   userLeftReceived,
   userBusyChanged,
@@ -137,24 +188,20 @@ export const selectPresenceStatus = (state: RootState) => state.presence.status;
 export const selectPresenceError = (state: RootState) => state.presence.error;
 export const selectCurrentUserId = (state: RootState) =>
   state.presence.currentUserId;
-export const selectUserCount = (state: RootState) => state.presence.ids.length;
+export const selectUserCount = (state: RootState) => state.presence.totalOnline;
+export const selectLoadedUserCount = (state: RootState) =>
+  state.presence.ids.length;
+export const selectPresenceSampleSize = (state: RootState) =>
+  state.presence.sampleSize;
 
 export const selectOtherUsersCount = createSelector(
   [selectPresence],
   (presence) => {
-    if (!presence.currentUserId) return presence.ids.length;
-    return presence.ids.reduce(
-      (count, id) => count + (id === presence.currentUserId ? 0 : 1),
-      0,
-    );
+    return Math.max(0, presence.totalOnline - (presence.currentUserId ? 1 : 0));
   },
 );
 
 export const selectBusyUsersCount = createSelector(
   [selectPresence],
-  (presence) =>
-    presence.ids.reduce((count, id) => {
-      const user = presence.entities[id];
-      return count + (user?.isBusy && id !== presence.currentUserId ? 1 : 0);
-    }, 0),
+  (presence) => presence.totalBusy,
 );

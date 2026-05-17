@@ -5,23 +5,31 @@ import {
   userTopic,
 } from "../../config";
 import { logInfo, logWarn } from "../../logger";
-import { chatStore } from "../../state/chat-store";
 import { presenceStore } from "../../state/presence-store";
+import { publishRealtime, realtimeStore } from "../../state/redis-realtime";
 import type { RealtimeSocket } from "../../transport/socket";
 import type {
   ChatRejectedEvent,
   OnlineUser,
-  UserJoinedEvent,
   UserLeftEvent,
 } from "../../types";
 import {
-  presenceUser,
   publishBusyStatus,
-  publishPresenceSnapshot,
+  publishPresenceCounts,
+  publishUserJoined,
   sendPresenceSnapshot,
 } from "./events";
 
-export const handleSocketOpen = (socket: RealtimeSocket) => {
+const publishLocalAndRemote = async (
+  socket: RealtimeSocket,
+  topic: string,
+  data: string,
+) => {
+  socket.publish(topic, data);
+  await publishRealtime(topic, data);
+};
+
+export const handleSocketOpen = async (socket: RealtimeSocket) => {
   const query = socket.data.query;
   const userId = query.userId?.trim() ?? "";
   const name = query.name?.trim() ?? "";
@@ -37,14 +45,16 @@ export const handleSocketOpen = (socket: RealtimeSocket) => {
   }
 
   const user: OnlineUser = { id: userId, name };
+  const connectionToken = crypto.randomUUID();
   presenceStore.setConnectionIdentity(socket.raw, user);
+  presenceStore.setConnectionToken(socket.raw, connectionToken);
 
-  const previousPresence = presenceStore.getUser(userId);
+  const previousPresence = await realtimeStore.getUser(userId);
   const previousConnection = presenceStore.getActiveConnection(userId);
   const shouldPublishJoin =
     !previousPresence || previousPresence.name !== user.name;
 
-  presenceStore.setUser(user);
+  await realtimeStore.registerUser(user, connectionToken);
   presenceStore.setActiveConnection(userId, {
     raw: socket.raw,
     close: socket.close.bind(socket),
@@ -55,14 +65,14 @@ export const handleSocketOpen = (socket: RealtimeSocket) => {
     {
       userId,
       name,
-      userCount: presenceStore.size(),
+      userCount: (await realtimeStore.totals()).online,
     },
   );
 
   if (previousConnection && previousConnection.raw !== socket.raw) {
-    const channel = chatStore.getBusyChannel(userId);
+    const channel = await realtimeStore.getBusyChannel(userId);
     if (channel) {
-      const releasedUsers = chatStore.releaseChannel(channel);
+      const releasedUsers = await realtimeStore.releaseChannel(channel);
       const otherId = releasedUsers.find((id) => id !== userId);
 
       if (otherId) {
@@ -70,11 +80,15 @@ export const handleSocketOpen = (socket: RealtimeSocket) => {
           type: "chat_rejected",
           byId: userId,
         };
-        socket.publish(userTopic(otherId), JSON.stringify(rejectedEvent));
+        await publishLocalAndRemote(
+          socket,
+          userTopic(otherId),
+          JSON.stringify(rejectedEvent),
+        );
       }
 
-      publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-      publishPresenceSnapshot(socket.publish.bind(socket));
+      await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
+      await publishPresenceCounts(socket.publish.bind(socket));
       logInfo("chat.ended_by_socket_replacement", {
         channel,
         replacedUserId: userId,
@@ -91,26 +105,27 @@ export const handleSocketOpen = (socket: RealtimeSocket) => {
   socket.subscribe(ONLINE_USERS_TOPIC);
   socket.subscribe(userTopic(userId));
 
-  sendPresenceSnapshot(socket.send.bind(socket), { userId });
+  await sendPresenceSnapshot(socket.send.bind(socket), { userId });
 
   if (shouldPublishJoin) {
-    const joined: UserJoinedEvent = {
-      type: "user_joined",
-      user: presenceUser(user),
-    };
-    socket.publish(ONLINE_USERS_TOPIC, JSON.stringify(joined));
-    logInfo("presence.user_joined_published", {
-      userId,
-      userCount: presenceStore.size(),
-    });
+    await publishUserJoined(socket.publish.bind(socket), user);
   }
+  await publishPresenceCounts(socket.publish.bind(socket));
 };
 
-export const handleSocketClose = (socket: RealtimeSocket) => {
+export const handleSocketClose = async (socket: RealtimeSocket) => {
   const identity = presenceStore.getConnectionIdentity(socket.raw);
   presenceStore.deleteConnectionIdentity(socket.raw);
+  const connectionToken = presenceStore.getConnectionToken(socket.raw);
+  presenceStore.deleteConnectionToken(socket.raw);
   if (!identity) {
     logWarn("presence.connection_closed_unknown");
+    return;
+  }
+  if (!connectionToken) {
+    logWarn("presence.connection_closed_missing_token", {
+      userId: identity.id,
+    });
     return;
   }
 
@@ -123,7 +138,13 @@ export const handleSocketClose = (socket: RealtimeSocket) => {
     return;
   }
 
-  const previousPresence = presenceStore.getUser(userId);
+  if (!(await realtimeStore.ownsConnection(userId, connectionToken))) {
+    presenceStore.deleteActiveConnection(userId);
+    logInfo("presence.close_ignored_for_replaced_connection", { userId });
+    return;
+  }
+
+  const previousPresence = await realtimeStore.getUser(userId);
   if (!previousPresence) {
     logWarn("presence.connection_closed_missing_presence", {
       userId,
@@ -134,10 +155,10 @@ export const handleSocketClose = (socket: RealtimeSocket) => {
 
   presenceStore.deleteActiveConnection(userId);
 
-  const channel = chatStore.getBusyChannel(userId);
+  const channel = await realtimeStore.getBusyChannel(userId);
   let releasedUsers: readonly string[] = [];
   if (channel) {
-    releasedUsers = chatStore.releaseChannel(channel);
+    releasedUsers = await realtimeStore.releaseChannel(channel);
     const otherId = releasedUsers.find((id) => id !== userId);
 
     if (otherId) {
@@ -145,7 +166,11 @@ export const handleSocketClose = (socket: RealtimeSocket) => {
         type: "chat_rejected",
         byId: userId,
       };
-      socket.publish(userTopic(otherId), JSON.stringify(rejectedEvent));
+      await publishLocalAndRemote(
+        socket,
+        userTopic(otherId),
+        JSON.stringify(rejectedEvent),
+      );
       logInfo("chat.ended_by_disconnect", {
         channel,
         disconnectedUserId: userId,
@@ -154,17 +179,21 @@ export const handleSocketClose = (socket: RealtimeSocket) => {
     }
   }
 
-  presenceStore.deleteUser(userId);
-  publishBusyStatus(
+  const removedPresence = await realtimeStore.removeUser(userId, connectionToken);
+  if (!removedPresence) {
+    logInfo("presence.close_ignored_for_replaced_connection", { userId });
+    return;
+  }
+  await publishBusyStatus(
     socket.publish.bind(socket),
     releasedUsers.filter((id) => id !== userId),
   );
-  publishPresenceSnapshot(socket.publish.bind(socket));
+  await publishPresenceCounts(socket.publish.bind(socket));
 
   const left: UserLeftEvent = { type: "user_left", userId };
-  socket.publish(ONLINE_USERS_TOPIC, JSON.stringify(left));
+  await publishLocalAndRemote(socket, ONLINE_USERS_TOPIC, JSON.stringify(left));
   logInfo("presence.user_left", {
     userId,
-    userCount: presenceStore.size(),
+    userCount: (await realtimeStore.totals()).online,
   });
 };

@@ -1,44 +1,86 @@
-import { ONLINE_USERS_TOPIC } from "../../config";
+import { ONLINE_USERS_TOPIC, PRESENCE_SAMPLE_SIZE } from "../../config";
 import { logInfo, logWarn, type LogMeta } from "../../logger";
-import { chatStore } from "../../state/chat-store";
-import { presenceStore } from "../../state/presence-store";
+import { publishRealtime, realtimeStore } from "../../state/redis-realtime";
 import type { PublishFn, SendFn } from "../../transport/socket";
 import type {
   OnlinePresenceUser,
   OnlineUser,
+  PresenceCountsEvent,
   OnlineUsersSnapshotEvent,
+  UserJoinedEvent,
   UserStatusChangedEvent,
 } from "../../types";
 
-export const presenceUser = (user: OnlineUser): OnlinePresenceUser => ({
+export const presenceUser = async (user: OnlineUser): Promise<OnlinePresenceUser> => ({
   ...user,
-  isBusy: chatStore.hasBusyUser(user.id),
+  isBusy: Boolean(await realtimeStore.getBusyChannel(user.id)),
 });
 
-export const onlineUsersSnapshot = () =>
-  presenceStore.users().map((user) => presenceUser(user));
+export const onlineUsersSnapshot = async () =>
+  realtimeStore.sample(PRESENCE_SAMPLE_SIZE);
 
-export const publishPresenceSnapshot = (publish: PublishFn) => {
-  const snapshot: OnlineUsersSnapshotEvent = {
-    type: "online_users_snapshot",
-    users: onlineUsersSnapshot(),
+export const publishPresenceCounts = async (publish: PublishFn) => {
+  const totals = await realtimeStore.totals();
+  const event: PresenceCountsEvent = {
+    type: "presence_counts",
+    online: totals.online,
+    busy: totals.busy,
   };
-  publish(ONLINE_USERS_TOPIC, JSON.stringify(snapshot));
-  logInfo("presence.snapshot_published", {
-    snapshotUsers: snapshot.users.length,
+  const data = JSON.stringify(event);
+  publish(ONLINE_USERS_TOPIC, data);
+  await publishRealtime(ONLINE_USERS_TOPIC, data);
+  logInfo("presence.counts_published", {
+    online: totals.online,
+    busy: totals.busy,
   });
 };
 
-export const sendPresenceSnapshot = (send: SendFn, meta: LogMeta = {}) => {
+export const publishUserJoined = async (publish: PublishFn, user: OnlineUser) => {
+  const event: UserJoinedEvent = {
+    type: "user_joined",
+    user: await presenceUser(user),
+  };
+  const data = JSON.stringify(event);
+  publish(ONLINE_USERS_TOPIC, data);
+  await publishRealtime(ONLINE_USERS_TOPIC, data);
+  logInfo("presence.user_joined_published", {
+    userId: user.id,
+  });
+};
+
+export const publishPresenceSnapshot = async (publish: PublishFn) => {
+  const sample = await onlineUsersSnapshot();
   const snapshot: OnlineUsersSnapshotEvent = {
     type: "online_users_snapshot",
-    users: onlineUsersSnapshot(),
+    users: sample.users,
+    totalOnline: sample.totals.online,
+    totalBusy: sample.totals.busy,
+    sampleSize: sample.sampleSize,
+  };
+  const data = JSON.stringify(snapshot);
+  publish(ONLINE_USERS_TOPIC, data);
+  await publishRealtime(ONLINE_USERS_TOPIC, data);
+  logInfo("presence.snapshot_published", {
+    snapshotUsers: snapshot.users.length,
+    totalOnline: snapshot.totalOnline,
+  });
+};
+
+export const sendPresenceSnapshot = async (send: SendFn, meta: LogMeta = {}) => {
+  const sample = await onlineUsersSnapshot();
+  const snapshot: OnlineUsersSnapshotEvent = {
+    type: "online_users_snapshot",
+    users: sample.users,
+    totalOnline: sample.totals.online,
+    totalBusy: sample.totals.busy,
+    sampleSize: sample.sampleSize,
   };
 
   try {
     send(JSON.stringify(snapshot));
     logInfo("presence.snapshot_sent", {
       snapshotUsers: snapshot.users.length,
+      totalOnline: snapshot.totalOnline,
       ...meta,
     });
   } catch (err) {
@@ -49,24 +91,28 @@ export const sendPresenceSnapshot = (send: SendFn, meta: LogMeta = {}) => {
   }
 };
 
-export const publishBusyStatus = (
+export const publishBusyStatus = async (
   publish: PublishFn,
   userIds: Iterable<string>,
 ) => {
   const seen = new Set<string>();
-  for (const userId of userIds) {
-    if (seen.has(userId) || !presenceStore.hasUser(userId)) continue;
-    seen.add(userId);
+  await Promise.all(
+    Array.from(userIds, async (userId) => {
+      if (seen.has(userId) || !(await realtimeStore.hasUser(userId))) return;
+      seen.add(userId);
 
-    const event: UserStatusChangedEvent = {
-      type: "user_status_changed",
-      userId,
-      isBusy: chatStore.hasBusyUser(userId),
-    };
-    publish(ONLINE_USERS_TOPIC, JSON.stringify(event));
-    logInfo("presence.status_changed", {
-      userId,
-      isBusy: event.isBusy,
-    });
-  }
+      const event: UserStatusChangedEvent = {
+        type: "user_status_changed",
+        userId,
+        isBusy: Boolean(await realtimeStore.getBusyChannel(userId)),
+      };
+      const data = JSON.stringify(event);
+      publish(ONLINE_USERS_TOPIC, data);
+      await publishRealtime(ONLINE_USERS_TOPIC, data);
+      logInfo("presence.status_changed", {
+        userId,
+        isBusy: event.isBusy,
+      });
+    }),
+  );
 };

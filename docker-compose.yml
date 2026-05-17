@@ -1,4 +1,15 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   websocket_service:
     build:
       context: .
@@ -6,8 +17,13 @@ services:
     image: mono-repo-websocket-service
     ports:
       - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
       NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      PRESENCE_SAMPLE_SIZE: 100
     restart: unless-stopped
     healthcheck:
       test:

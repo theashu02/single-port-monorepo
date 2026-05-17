@@ -13,3 +13,7 @@ bun run dev
 ```
 
 Open http://localhost:3000/ with your browser to see the result.
+
+## Realtime Architecture
+
+See [REALTIME_ARCHITECTURE.md](./REALTIME_ARCHITECTURE.md) for the Redis-backed presence and one-to-one chat flow, including join, leave, request, accept, message, typing, and disconnect behavior.
