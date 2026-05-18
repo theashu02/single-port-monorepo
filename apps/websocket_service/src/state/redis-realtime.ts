@@ -92,10 +92,12 @@ export const publishRealtime = async (topic: string, data: string) => {
 
 export const realtimeStore = {
   registerUser: async (user: OnlineUser, connectionToken: string) => {
-    const existed = await redis.hexists(USERS_KEY, user.id);
-    await redis.hset(USERS_KEY, user.id, JSON.stringify(user));
-    await redis.zadd(ONLINE_KEY, Date.now(), user.id);
-    await redis.set(`${CONNECTION_PREFIX}${user.id}`, connectionToken, "EX", 86400);
+    const [existed] = await Promise.all([
+      redis.hexists(USERS_KEY, user.id),
+      redis.hset(USERS_KEY, user.id, JSON.stringify(user)),
+      redis.zadd(ONLINE_KEY, Date.now(), user.id),
+      redis.set(`${CONNECTION_PREFIX}${user.id}`, connectionToken, "EX", 86400)
+    ]);
     return existed;
   },
 
@@ -106,10 +108,12 @@ export const realtimeStore = {
     if (!(await realtimeStore.ownsConnection(userId, connectionToken))) {
       return false;
     }
-    await redis.hdel(USERS_KEY, userId);
-    await redis.zrem(ONLINE_KEY, userId);
-    await redis.hdel(BUSY_KEY, userId);
-    await redis.del(`${CONNECTION_PREFIX}${userId}`);
+    await Promise.all([
+      redis.hdel(USERS_KEY, userId),
+      redis.zrem(ONLINE_KEY, userId),
+      redis.hdel(BUSY_KEY, userId),
+      redis.del(`${CONNECTION_PREFIX}${userId}`)
+    ]);
     return true;
   },
 
@@ -117,16 +121,23 @@ export const realtimeStore = {
 
   getUser: async (userId: string) => parseUser(await redis.hget(USERS_KEY, userId)),
 
-  totals: async (): Promise<PresenceTotals> => ({
-    online: await redis.zcard(ONLINE_KEY),
-    busy: await redis.hlen(BUSY_KEY),
-  }),
+  totals: async (): Promise<PresenceTotals> => {
+    const [online, busy] = await Promise.all([
+      redis.zcard(ONLINE_KEY),
+      redis.hlen(BUSY_KEY),
+    ]);
+    return { online, busy };
+  },
 
   sample: async (limit: number): Promise<PresenceSample> => {
     const sampleSize = Math.max(1, Math.min(limit, 500));
     const ids = await redis.zrevrange(ONLINE_KEY, 0, sampleSize - 1);
-    const values = ids.length > 0 ? await redis.hmget(USERS_KEY, ids) : [];
-    const busyValues = ids.length > 0 ? await redis.hmget(BUSY_KEY, ids) : [];
+    const [values, busyValues] = ids.length > 0
+      ? await Promise.all([
+          redis.hmget(USERS_KEY, ids),
+          redis.hmget(BUSY_KEY, ids),
+        ])
+      : [[], []];
     const users = values.flatMap((value, index) => {
       const user = parseUser(value);
       return user ? [{ ...user, isBusy: Boolean(busyValues[index]) }] : [];
@@ -142,16 +153,20 @@ export const realtimeStore = {
   getBusyChannel: async (userId: string) => redis.hget(BUSY_KEY, userId),
 
   markChannelBusy: async (channel: string, userA: string, userB: string) => {
-    const userABusy = await redis.hexists(BUSY_KEY, userA);
-    const userBBusy = await redis.hexists(BUSY_KEY, userB);
+    const [userABusy, userBBusy] = await Promise.all([
+      redis.hexists(BUSY_KEY, userA),
+      redis.hexists(BUSY_KEY, userB),
+    ]);
     if (userABusy || userBBusy) return null;
 
-    await redis.hset(BUSY_KEY, {
-      [userA]: channel,
-      [userB]: channel,
-    });
-    await redis.hset(CHANNELS_KEY, channel, JSON.stringify([userA, userB]));
-    await redis.set(`${CHANNEL_STATE_PREFIX}${channel}`, "pending", "EX", 60);
+    await Promise.all([
+      redis.hset(BUSY_KEY, {
+        [userA]: channel,
+        [userB]: channel,
+      }),
+      redis.hset(CHANNELS_KEY, channel, JSON.stringify([userA, userB])),
+      redis.set(`${CHANNEL_STATE_PREFIX}${channel}`, "pending", "EX", 60),
+    ]);
     return [userA, userB] as const;
   },
 
@@ -179,8 +194,10 @@ export const realtimeStore = {
 
   releaseChannel: async (channel: string) => {
     const members = await realtimeStore.getChannelMembers(channel);
-    await redis.hdel(CHANNELS_KEY, channel);
-    await redis.del(`${CHANNEL_STATE_PREFIX}${channel}`);
+    await Promise.all([
+      redis.hdel(CHANNELS_KEY, channel),
+      redis.del(`${CHANNEL_STATE_PREFIX}${channel}`),
+    ]);
     if (!members) return [];
 
     await redis.hdel(BUSY_KEY, ...members);
