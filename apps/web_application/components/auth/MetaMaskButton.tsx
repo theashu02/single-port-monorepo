@@ -73,6 +73,7 @@ export function MetaMaskButton() {
             width={20}
             height={20}
             alt="MetaMask logo"
+            style={{ width: "auto", height: "auto" }}
           />
         </span>
         <span className="text-left text-sm sm:text-[13px]">
