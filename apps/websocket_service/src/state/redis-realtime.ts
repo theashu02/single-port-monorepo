@@ -90,6 +90,10 @@ export const publishRealtime = async (topic: string, data: string) => {
   );
 };
 
+let cachedSample: PresenceSample | null = null;
+let lastSampleTime = 0;
+const SAMPLE_CACHE_TTL_MS = 3000; // Cache for 3 seconds
+
 export const realtimeStore = {
   registerUser: async (user: OnlineUser, connectionToken: string) => {
     const [existed] = await Promise.all([
@@ -130,6 +134,12 @@ export const realtimeStore = {
   },
 
   sample: async (limit: number): Promise<PresenceSample> => {
+    const now = Date.now();
+    // Return cached sample if within TTL
+    if (cachedSample && (now - lastSampleTime < SAMPLE_CACHE_TTL_MS)) {
+      return cachedSample;
+    }
+
     const sampleSize = Math.max(1, Math.min(limit, 500));
     const ids = await redis.zrevrange(ONLINE_KEY, 0, sampleSize - 1);
     const [values, busyValues] = ids.length > 0
@@ -143,11 +153,16 @@ export const realtimeStore = {
       return user ? [{ ...user, isBusy: Boolean(busyValues[index]) }] : [];
     });
 
-    return {
+    const newSample = {
       users,
       totals: await realtimeStore.totals(),
       sampleSize,
     };
+
+    // Update cache
+    cachedSample = newSample;
+    lastSampleTime = now;
+    return newSample;
   },
 
   getBusyChannel: async (userId: string) => redis.hget(BUSY_KEY, userId),
