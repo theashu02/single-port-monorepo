@@ -11,12 +11,9 @@ import type { RealtimeSocket } from "../../transport/socket";
 import type {
   ChatRejectedEvent,
   OnlineUser,
-  UserLeftEvent,
 } from "../../types";
 import {
   publishBusyStatus,
-  publishPresenceCounts,
-  publishUserJoined,
   sendPresenceSnapshot,
 } from "./events";
 
@@ -51,8 +48,6 @@ export const handleSocketOpen = async (socket: RealtimeSocket) => {
 
   const previousPresence = await realtimeStore.getUser(userId);
   const previousConnection = presenceStore.getActiveConnection(userId);
-  const shouldPublishJoin =
-    !previousPresence || previousPresence.name !== user.name;
 
   await realtimeStore.registerUser(user, connectionToken);
   presenceStore.setActiveConnection(userId, {
@@ -88,7 +83,6 @@ export const handleSocketOpen = async (socket: RealtimeSocket) => {
       }
 
       await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-      await publishPresenceCounts(socket.publish.bind(socket));
       logInfo("chat.ended_by_socket_replacement", {
         channel,
         replacedUserId: userId,
@@ -106,11 +100,6 @@ export const handleSocketOpen = async (socket: RealtimeSocket) => {
   socket.subscribe(userTopic(userId));
 
   await sendPresenceSnapshot(socket.send.bind(socket), { userId });
-
-  if (shouldPublishJoin) {
-    await publishUserJoined(socket.publish.bind(socket), user);
-  }
-  await publishPresenceCounts(socket.publish.bind(socket));
 };
 
 export const handleSocketClose = async (socket: RealtimeSocket) => {
@@ -188,12 +177,8 @@ export const handleSocketClose = async (socket: RealtimeSocket) => {
     socket.publish.bind(socket),
     releasedUsers.filter((id) => id !== userId),
   );
-  await publishPresenceCounts(socket.publish.bind(socket));
 
-  const left: UserLeftEvent = { type: "user_left", userId };
-  await publishLocalAndRemote(socket, ONLINE_USERS_TOPIC, JSON.stringify(left));
   logInfo("presence.user_left", {
     userId,
-    userCount: (await realtimeStore.totals()).online,
   });
 };

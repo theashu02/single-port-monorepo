@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { SERVICE_PORT, WS_PATH } from "./config";
+import { ONLINE_USERS_TOPIC, PRESENCE_SAMPLE_SIZE, SERVICE_PORT, WS_PATH } from "./config";
 import { handleSocketMessage } from "./features/chat/handlers";
 import {
   handleSocketClose,
@@ -14,7 +14,11 @@ import {
 } from "./state/redis-realtime";
 import { toRealtimeSocket } from "./transport/socket";
 
-export const configureServiceMetrics = () => {
+interface AppWithServer {
+  server?: { publish(topic: string, data: string): void } | null;
+}
+
+export const configureServiceMetrics = (app: AppWithServer) => {
   let latestOnlineUsers = 0;
   let latestBusyUsers = 0;
 
@@ -22,8 +26,28 @@ export const configureServiceMetrics = () => {
     void realtimeStore.totals().then((totals) => {
       latestOnlineUsers = totals.online;
       latestBusyUsers = totals.busy;
+
+      // Broadcast counts globally ONLY once every 5 seconds
+      app.server?.publish(ONLINE_USERS_TOPIC, JSON.stringify({
+        type: "presence_counts",
+        online: latestOnlineUsers,
+        busy: latestBusyUsers,
+      }));
     });
-  }, 5000).unref();
+  }, 3500).unref();
+
+  // Broadcast a full snapshot every 10 seconds so the UI repopulates
+  setInterval(() => {
+    void realtimeStore.sample(PRESENCE_SAMPLE_SIZE).then((sample) => {
+      app.server?.publish(ONLINE_USERS_TOPIC, JSON.stringify({
+        type: "online_users_snapshot",
+        users: sample.users,
+        totalOnline: sample.totals.online,
+        totalBusy: sample.totals.busy,
+        sampleSize: sample.sampleSize,
+      }));
+    });
+  }, 8000).unref();
 
   configureLoggerMetrics(() => ({
     onlineUsers: latestOnlineUsers,
@@ -34,8 +58,6 @@ export const configureServiceMetrics = () => {
 };
 
 export const createWebSocketService = () => {
-  configureServiceMetrics();
-
   return new Elysia()
     .get("/health", () => ({ ok: true }))
     .ws(WS_PATH, {
@@ -71,6 +93,7 @@ export const createWebSocketService = () => {
 export const startWebSocketService = async (port = SERVICE_PORT) => {
   await connectRealtimeStore();
   const app = createWebSocketService().listen(port);
+  configureServiceMetrics(app);
   await subscribeRealtimeBus((topic, data) => app.server?.publish(topic, data));
 
   logInfo("service.started", {

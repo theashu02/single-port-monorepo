@@ -33,8 +33,6 @@ import {
   selectPresenceStatus,
   selectUserCount,
   userBusyChanged,
-  userJoinedReceived,
-  userLeftReceived,
   type OnlineUser,
   type PresenceStatus,
 } from "@/lib/redux/slices/presenceSlice";
@@ -99,8 +97,6 @@ type ServerEvent =
       sampleSize: number;
     }
   | { type: "presence_counts"; online: number; busy: number }
-  | { type: "user_joined"; user: OnlineUser }
-  | { type: "user_left"; userId: string }
   | { type: "user_status_changed"; userId: string; isBusy: boolean }
   | { type: "chat_invite"; from: OnlineUser; channel: string }
   | { type: "chat_ready"; channel: string }
@@ -152,14 +148,6 @@ function parseServerEvent(raw: string): ServerEvent | null {
         online: Math.max(0, parsed.online),
         busy: Math.max(0, parsed.busy),
       };
-    }
-    case "user_joined": {
-      const user = parseOnlineUser(parsed.user);
-      return user ? { type: "user_joined", user } : null;
-    }
-    case "user_left": {
-      const userId = parseNonEmptyString(parsed.userId);
-      return userId ? { type: "user_left", userId } : null;
     }
     case "user_status_changed": {
       const userId = parseNonEmptyString(parsed.userId);
@@ -392,12 +380,6 @@ export function OnlinePresenceProvider({
             dispatchRef.current(
               presenceCountsReceived({ online: msg.online, busy: msg.busy }),
             );
-            return;
-          case "user_joined":
-            dispatchRef.current(userJoinedReceived(msg.user));
-            return;
-          case "user_left":
-            dispatchRef.current(userLeftReceived(msg.userId));
             return;
           case "user_status_changed":
             dispatchRef.current(

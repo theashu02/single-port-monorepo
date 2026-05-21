@@ -17,7 +17,6 @@ import type {
 } from "../../types";
 import {
   publishBusyStatus,
-  publishPresenceCounts,
   sendPresenceSnapshot,
 } from "../presence/events";
 
@@ -139,7 +138,6 @@ export const handleSocketMessage = async (
       targetId,
     });
     await publishBusyStatus(socket.publish.bind(socket), busyUsers);
-    await publishPresenceCounts(socket.publish.bind(socket));
     await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_request",
@@ -178,7 +176,6 @@ export const handleSocketMessage = async (
         socket.send(JSON.stringify(expiredEvent));
         socket.unsubscribe(channel);
         await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-        await publishPresenceCounts(socket.publish.bind(socket));
         await sendPresenceSnapshot(socket.send.bind(socket), {
           userId,
           reason: "invite_expired",
@@ -256,7 +253,6 @@ export const handleSocketMessage = async (
       JSON.stringify(rejectedEvent),
     );
     await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-    await publishPresenceCounts(socket.publish.bind(socket));
     await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_rejected",
@@ -301,7 +297,6 @@ export const handleSocketMessage = async (
     }
 
     await publishBusyStatus(socket.publish.bind(socket), releasedUsers);
-    await publishPresenceCounts(socket.publish.bind(socket));
     await sendPresenceSnapshot(socket.send.bind(socket), {
       userId,
       reason: "chat_ended",

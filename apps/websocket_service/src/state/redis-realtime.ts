@@ -46,8 +46,32 @@ const parseUser = (value: string | null): OnlineUser | null => {
   }
 };
 
+/** Remove all presence keys so stale data from crashed/restarted instances is cleared. */
+const flushPresence = async () => {
+  const keysToDelete: string[] = [USERS_KEY, ONLINE_KEY, BUSY_KEY, CHANNELS_KEY];
+
+  // Collect per-user connection keys
+  const userIds = await redis.hkeys(USERS_KEY);
+  for (const userId of userIds) {
+    keysToDelete.push(`${CONNECTION_PREFIX}${userId}`);
+  }
+
+  // Collect per-channel state keys
+  const channelIds = await redis.hkeys(CHANNELS_KEY);
+  for (const ch of channelIds) {
+    keysToDelete.push(`${CHANNEL_STATE_PREFIX}${ch}`);
+  }
+
+  if (keysToDelete.length > 0) {
+    await redis.del(...keysToDelete);
+  }
+
+  logInfo("redis.presence_flushed", { deletedKeys: keysToDelete.length });
+};
+
 export const connectRealtimeStore = async () => {
   await redis.connect();
+  await flushPresence();
   logInfo("redis.connected", { url: REDIS_URL });
 };
 
