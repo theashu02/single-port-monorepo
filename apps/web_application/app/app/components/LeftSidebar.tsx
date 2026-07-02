@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { ACCOUNT_NAV_ITEMS, MAIN_NAV_ITEMS } from "./left-sidebar/constants";
 import { SidebarNavItem } from "./left-sidebar/nav-item";
 import type { DashboardTab } from "./left-sidebar/types";
-import { useSidebarController } from "./left-sidebar/use-sidebar-controller";
+import { useSidebarController } from "../../../lib/hooks/use-sidebar-controller";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { selectUserCount } from "@/lib/redux/slices/presenceSlice";
@@ -36,19 +36,28 @@ function SidebarAccountDivider({ isCollapsed }: { isCollapsed: boolean }) {
 }
 
 export function Sidebar({ activeTab }: SidebarProps) {
-  const { isCollapsed, toggleCollapsed, handleLogout, isLoggingOut } = useSidebarController();
+  const { isCollapsed, toggleCollapsed, handleLogout, isLoggingOut } =
+    useSidebarController();
   const onlineUserCount = useAppSelector(selectUserCount);
 
   return (
     <motion.aside
       initial={false}
       animate={{ width: isCollapsed ? 80 : 240 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30, restDelta: 0.5 }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+        restDelta: 0.5,
+      }}
       className="relative z-30 hidden h-screen flex-col overflow-hidden border-r border-sidebar-border bg-sidebar will-change-[width] md:flex"
     >
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-sidebar-border px-4">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary">
-          <Sparkles className="h-5 w-5 text-primary-foreground" aria-hidden="true" />
+          <Sparkles
+            className="h-5 w-5 text-primary-foreground"
+            aria-hidden="true"
+          />
         </div>
 
         {!isCollapsed && (
@@ -58,8 +67,12 @@ export function Sidebar({ activeTab }: SidebarProps) {
             transition={{ duration: 0.2, delay: 0.1 }}
             className="ml-3 flex flex-col overflow-hidden whitespace-nowrap"
           >
-            <span className="text-lg font-black tracking-tight text-sidebar-foreground">Vibez</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Beta v1.0</span>
+            <span className="text-lg font-black tracking-tight text-sidebar-foreground">
+              Vibez
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Beta v1.0
+            </span>
           </motion.div>
         )}
 
@@ -67,10 +80,16 @@ export function Sidebar({ activeTab }: SidebarProps) {
           variant="ghost"
           size="icon-xs"
           onClick={toggleCollapsed}
-          className={cn("rounded-full bg-sidebar-accent text-sidebar-foreground/50 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground", isCollapsed ? "mx-auto" : "ml-auto")}
+          className={cn(
+            "rounded-full bg-sidebar-accent text-sidebar-foreground/50 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
+            isCollapsed ? "mx-auto" : "ml-auto",
+          )}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <motion.div animate={{ rotate: isCollapsed ? 180 : 0 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}>
+          <motion.div
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </motion.div>
         </Button>
@@ -82,7 +101,9 @@ export function Sidebar({ activeTab }: SidebarProps) {
             <SidebarNavItem
               key={item.label}
               {...item}
-              badge={item.label === "Online People" ? onlineUserCount : item.badge}
+              badge={
+                item.label === "Online People" ? onlineUserCount : item.badge
+              }
               isCollapsed={isCollapsed}
               isActive={activeTab === item.label}
             />
@@ -108,8 +129,13 @@ export function Sidebar({ activeTab }: SidebarProps) {
           className="mx-3 mb-3 shrink-0 overflow-hidden rounded-xl border border-primary/20 bg-primary/10 p-4"
         >
           <div className="text-xs font-semibold text-primary">Go Pro</div>
-          <div className="mt-1 text-[11px] leading-snug text-muted-foreground">Unlimited matches, no ads.</div>
-          <Button size="sm" className="mt-3 h-8 w-full rounded-lg bg-primary text-xs text-primary-foreground hover:bg-primary/90">
+          <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
+            Unlimited matches, no ads.
+          </div>
+          <Button
+            size="sm"
+            className="mt-3 h-8 w-full rounded-lg bg-primary text-xs text-primary-foreground hover:bg-primary/90"
+          >
             Upgrade
           </Button>
         </motion.div>
@@ -133,7 +159,11 @@ export function Sidebar({ activeTab }: SidebarProps) {
           </span>
 
           {!isCollapsed && (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="ml-3 overflow-hidden whitespace-nowrap text-sm font-medium">
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="ml-3 overflow-hidden whitespace-nowrap text-sm font-medium"
+            >
               {isLoggingOut ? "Logging out..." : "Logout"}
             </motion.span>
           )}

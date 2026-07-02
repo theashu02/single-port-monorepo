@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { logoutGuestSession } from "@/core/apis/General_API";
-import { GUEST_MARKER_KEY } from "./constants";
+import { GUEST_MARKER_KEY } from "../../app/app/components/left-sidebar/constants";
 
 export function useSidebarController() {
   const [isCollapsed, setIsCollapsed] = useState(false);
