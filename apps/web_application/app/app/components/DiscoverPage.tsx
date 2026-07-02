@@ -19,7 +19,6 @@ import {
 import { selectCurrentUserId, selectUserCount } from "@/lib/redux/slices/presenceSlice";
 import { useOnlinePresenceActions } from "./online-people/OnlinePresenceProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import MessageRow from "./online-people/MessageRow";
@@ -56,27 +55,29 @@ function IdleView({
   onlineCount: number;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 px-6 text-center h-full">
+    <div className="flex h-full flex-col items-center justify-center gap-8 px-6 text-center">
       {/* Decorative orb */}
       <div className="relative">
-        <div className="h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-cyan-400/30 blur-2xl absolute inset-0 animate-pulse" />
-        <div className="relative h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/10 to-cyan-400/10 border border-white/10 grid place-items-center">
+        <div className="absolute inset-0 h-32 w-32 animate-pulse rounded-full bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-cyan-400/30 blur-2xl" />
+        <div className="relative grid h-32 w-32 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-violet-500/10 to-cyan-400/10">
           <Sparkles className="h-12 w-12 text-violet-400" />
         </div>
       </div>
 
       <div>
-        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">Discover Someone New</h2>
-        <p className="mt-2 text-sm text-white/50 max-w-xs mx-auto">
+        <h2 className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-3xl font-black tracking-tight text-transparent">
+          Discover Someone New
+        </h2>
+        <p className="mx-auto mt-2 max-w-xs text-sm text-white/60">
           Get matched with a random online user for a direct anonymous conversation.
         </p>
       </div>
 
       {/* Online count */}
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2">
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
         </span>
         <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
           {onlineCount.toLocaleString()} online now
@@ -87,7 +88,7 @@ function IdleView({
       <button
         id="start-matching-btn"
         onClick={onStart}
-        className="group relative px-10 py-4 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white font-bold text-base tracking-wide shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:scale-105 active:scale-95"
+        className="group relative rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 px-10 py-4 text-base font-bold tracking-wide text-white shadow-lg shadow-violet-500/25 transition-all hover:scale-105 hover:shadow-violet-500/40 active:scale-95"
       >
         <span className="flex items-center gap-2">
           <Search className="h-5 w-5" />
@@ -110,33 +111,35 @@ function SearchingView({
   queuePosition: number | null;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 px-6 text-center h-full">
+    <div className="flex h-full flex-col items-center justify-center gap-8 px-6 text-center">
       {/* Animated pulse rings */}
       <div className="relative flex items-center justify-center">
-        <div className="absolute h-40 w-40 rounded-full border border-violet-500/30 animate-ping" style={{ animationDuration: "2s" }} />
-        <div className="absolute h-32 w-32 rounded-full border border-fuchsia-500/20 animate-ping" style={{ animationDuration: "2.5s" }} />
-        <div className="absolute h-24 w-24 rounded-full border border-cyan-400/20 animate-ping" style={{ animationDuration: "3s" }} />
-        <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-white/10 grid place-items-center">
-          <RefreshCw className="h-8 w-8 text-violet-400 animate-spin" style={{ animationDuration: "3s" }} />
+        <div className="absolute h-40 w-40 animate-ping rounded-full border border-violet-500/30" style={{ animationDuration: "2s" }} />
+        <div className="absolute h-32 w-32 animate-ping rounded-full border border-fuchsia-500/20" style={{ animationDuration: "2.5s" }} />
+        <div className="absolute h-24 w-24 animate-ping rounded-full border border-cyan-400/20" style={{ animationDuration: "3s" }} />
+        <div className="relative grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
+          <RefreshCw className="h-8 w-8 animate-spin text-violet-400" style={{ animationDuration: "3s" }} />
         </div>
       </div>
 
       <div>
-        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">Finding Your Match</h2>
+        <h2 className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-3xl font-black tracking-tight text-transparent">
+          Finding Your Match
+        </h2>
         <p className="mt-2 text-sm text-white/50">
           Vibing through online queues to find your partner…
         </p>
       </div>
 
       {/* Timer & position */}
-      <div className="flex items-center gap-4 justify-center">
-        <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10">
-          <span className="text-sm font-mono font-medium text-white/70">
+      <div className="flex items-center justify-center gap-4">
+        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">
+          <span className="font-mono text-sm font-medium text-white/70">
             {formatElapsed(elapsed)}
           </span>
         </div>
         {queuePosition !== null && (
-          <div className="px-4 py-2 rounded-full bg-violet-500/10 border border-violet-400/20">
+          <div className="rounded-full border border-violet-400/20 bg-violet-500/10 px-4 py-2">
             <span className="text-sm font-medium text-violet-300">
               #{queuePosition} in queue
             </span>
@@ -148,7 +151,7 @@ function SearchingView({
       <button
         id="cancel-matching-btn"
         onClick={onCancel}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-white/10 bg-white/5 text-white/70 font-medium hover:bg-white/10 hover:text-white transition-all active:scale-95"
+        className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-8 py-3 font-medium text-white/70 transition-all hover:bg-white/10 hover:text-white active:scale-95"
       >
         <X className="h-4 w-4" />
         Cancel
@@ -157,7 +160,7 @@ function SearchingView({
   );
 }
 
-// ── Inline ChatGPT/Gemini style Chat View ──────────────────────────────────────────
+// ── Inline Minimal Chat View ──────────────────────────────────────────
 
 interface ChatUser {
   id: string;
@@ -219,13 +222,12 @@ function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProp
   useEffect(() => {
     activeChannelRef.current = channel;
     closeSentRef.current = false;
-    
+
     return () => {
       stopTyping();
     };
   }, [channel, stopTyping]);
 
-  // Window pagehide / unload cleanup to prevent ghost sessions
   useEffect(() => {
     const endActiveChatOnUnload = () => {
       stopTyping();
@@ -263,10 +265,10 @@ function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProp
       const value = e.target.value;
       setDraft(value);
 
-      // Auto-grow textarea height dynamically
+      // Auto-grow textarea up to a reasonable max-height
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
       }
 
       if (!channel) return;
@@ -299,81 +301,86 @@ function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProp
   }, [channel, dispatch, endChat, stopTyping]);
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden bg-background/95">
-      <div className="flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6">
+    <div className="flex h-full w-full flex-col bg-background text-foreground">
+      {/* Header */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b px-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+            <Avatar className="h-10 w-10">
               <AvatarImage src={peer.avatarUrl} />
-              <AvatarFallback className="bg-muted text-muted-foreground font-semibold">{peer.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-muted text-muted-foreground font-semibold">
+                {peer.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-foreground tracking-tight">{peer.name}</span>
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${isPeerTyping ? "text-primary animate-pulse" : "text-emerald-500"}`}>
-              {isPeerTyping ? "Typing..." : "Matched"}
+            <span className="text-sm font-semibold tracking-tight">{peer.name}</span>
+            <span className={`text-xs ${isPeerTyping ? "text-primary animate-pulse" : "text-muted-foreground"}`}>
+              {isPeerTyping ? "Typing..." : "Connected"}
             </span>
           </div>
         </div>
-
-        <Button variant="ghost" size="sm" onClick={handleClose} className="h-9 rounded-full px-4 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleClose} 
+          className="h-9 rounded-full px-4 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="mr-1.5 h-4 w-4" />
           Disconnect
         </Button>
+      </header>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+          {messages.length === 0 ? (
+            <div className="my-auto flex flex-col items-center justify-center py-24 text-center opacity-70">
+              <MessageCircle className="mb-4 h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
+              <h3 className="text-lg font-medium">You're connected!</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Say hi to start the conversation with {peer.name}.
+              </p>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <MessageRow
+                key={msg.id}
+                msg={msg}
+                isMine={msg.fromId !== "__system__" && msg.fromId === currentUserId}
+              />
+            ))
+          )}
+          <div ref={bottomRef} className="h-1 shrink-0" />
+        </div>
       </div>
 
-      <div className="relative flex-1 overflow-hidden">
-        <ScrollArea className="h-full px-4 py-5 sm:px-6">
-          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pb-4">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center pt-24 text-center">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-muted/40">
-                  <MessageCircle className="h-5 w-5 text-primary" />
-                </div>
-                <p className="max-w-xs text-sm font-medium text-muted-foreground">
-                  You are connected with {peer.name}. Start the conversation below.
-                </p>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <MessageRow
-                  key={msg.id}
-                  msg={msg}
-                  isMine={msg.fromId !== "__system__" && msg.fromId === currentUserId}
-                />
-              ))
-            )}
-            <div ref={bottomRef} />
-          </div>
-        </ScrollArea>
-      </div>
-
-      <div className="w-full border-t border-border bg-background/90 px-4 py-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-[1.75rem] border border-border bg-muted/40 p-2 pl-4 shadow-sm transition-all focus-within:border-primary/50 focus-within:bg-background focus-within:ring-4 focus-within:ring-primary/10">
+      {/* Input */}
+      <div className="shrink-0 border-t bg-background p-3 sm:p-4">
+        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border bg-muted/50 p-1.5 focus-within:ring-1 focus-within:ring-ring transition-shadow">
           <Textarea
             ref={textareaRef}
             rows={1}
             value={draft}
             onChange={handleDraftChange}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${peer.name}`}
-            className="max-h-[160px] min-h-[40px] flex-1 resize-none border-0 bg-transparent px-0 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 scrollbar-hide"
+            placeholder={`Message ${peer.name}...`}
+            className="min-h-[40px] max-h-[150px] w-full resize-none border-0 bg-transparent px-3 py-2 text-[15px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none scrollbar-hide"
           />
-          
-          <div className="flex items-center gap-1.5 shrink-0 self-center pr-1">
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!draft.trim()}
-              className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:bg-muted disabled:text-muted-foreground"
-            >
-              <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
-            </Button>
-          </div>
+          <Button
+            size="icon"
+            onClick={handleSend}
+            disabled={!draft.trim()}
+            className="mb-0.5 mr-0.5 h-9 w-9 shrink-0 rounded-full transition-all"
+          >
+            <ArrowUp className="h-4 w-4 stroke-[2.5px]" />
+          </Button>
         </div>
-
-        <div className="hidden">
-          <span>Anonymous pairing • Encrypted conversation • Press Enter to send</span>
+        <div className="mx-auto mt-2 hidden max-w-3xl text-center md:block">
+          <p className="text-[10px] text-muted-foreground">
+            End-to-end encrypted • Anonymous matching • Press Enter to send
+          </p>
         </div>
       </div>
     </div>
@@ -402,39 +409,45 @@ export default function DiscoverPage() {
     cancelMatchmaking();
   }, [cancelMatchmaking]);
 
-  // Determine what to show
   const isInChat = chatPhase === "open";
   const isSearching = matchmakingPhase === "searching";
 
   return (
-    <div className="w-full h-full min-w-0">
-      <div className="h-full" style={{ opacity: 1, transform: "none" }}>
-        <div className="flex flex-col h-full p-4 lg:p-6 gap-4 min-w-0">
-          <div className="relative flex-1 min-h-0 rounded-3xl overflow-hidden glass border border-white/10 grid-bg">
-            {/* Background orbs */}
-            <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-violet-600/30 blur-3xl" />
-            <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl" />
-            <div className="absolute top-1/3 left-1/2 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
+    <div className="w-full h-full min-w-0 bg-background sm:p-4 lg:p-6">
+      {/* On mobile during active chat, padding goes away so the UI is flush to edges like a native app */}
+      <div 
+        className={`relative flex h-full w-full flex-col overflow-hidden transition-all duration-300 ${
+          isInChat
+            ? "sm:rounded-2xl sm:border border-border bg-background"
+            : "rounded-2xl border border-white/10 glass grid-bg"
+        }`}
+      >
+        {/* Background orbs - Hidden during chat so we get a clean minimalist chat view */}
+        {!isInChat && (
+          <>
+            <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-violet-600/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
+          </>
+        )}
 
-            {/* Content */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center">
-              {isInChat && chatPeer && chatChannel ? (
-                <DiscoverChatView
-                  peer={chatPeer}
-                  channel={chatChannel}
-                  currentUserId={currentUserId}
-                />
-              ) : isSearching ? (
-                <SearchingView
-                  onCancel={handleCancel}
-                  elapsed={elapsed}
-                  queuePosition={queuePosition}
-                />
-              ) : (
-                <IdleView onStart={handleStart} onlineCount={onlineCount} />
-              )}
-            </div>
-          </div>
+        {/* Dynamic Content Views */}
+        <div className="relative z-10 flex h-full w-full flex-col items-center justify-center">
+          {isInChat && chatPeer && chatChannel ? (
+            <DiscoverChatView
+              peer={chatPeer}
+              channel={chatChannel}
+              currentUserId={currentUserId}
+            />
+          ) : isSearching ? (
+            <SearchingView
+              onCancel={handleCancel}
+              elapsed={elapsed}
+              queuePosition={queuePosition}
+            />
+          ) : (
+            <IdleView onStart={handleStart} onlineCount={onlineCount} />
+          )}
         </div>
       </div>
     </div>
