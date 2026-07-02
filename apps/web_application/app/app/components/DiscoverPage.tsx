@@ -338,7 +338,7 @@ function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProp
           {messages.length === 0 ? (
             <div className="my-auto flex flex-col items-center justify-center py-24 text-center opacity-70">
               <MessageCircle className="mb-4 h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
-              <h3 className="text-lg font-medium">You're connected!</h3>
+              <h3 className="text-lg font-medium">You&apos;re connected!</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Say hi to start the conversation with {peer.name}.
               </p>
