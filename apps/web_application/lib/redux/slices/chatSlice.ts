@@ -97,6 +97,22 @@ const chatSlice = createSlice({
     },
 
     /**
+     * Matchmaking success - sets the peer and transitions phase to open.
+     */
+    matchmakeSuccess(
+      state,
+      action: PayloadAction<{ peer: ChatUser; channel: string }>,
+    ) {
+      state.phase = "open";
+      state.peer = action.payload.peer;
+      state.channel = action.payload.channel;
+      if (!state.messagesByChannel[action.payload.channel]) {
+        state.messagesByChannel[action.payload.channel] = [];
+      }
+      state.typingByChannel[action.payload.channel] = null;
+    },
+
+    /**
      * Server delivered a chat_message on an open channel.
      */
     messageReceived(
@@ -112,6 +128,9 @@ const chatSlice = createSlice({
       const { id, channel, fromId, text, ts } = action.payload;
       if (!state.messagesByChannel[channel]) {
         state.messagesByChannel[channel] = [];
+      }
+      if (state.messagesByChannel[channel].some((msg) => msg.id === id)) {
+        return;
       }
       state.messagesByChannel[channel].push({
         id,
@@ -203,6 +222,7 @@ export const {
   chatRequested,
   inviteReceived,
   chatReady,
+  matchmakeSuccess,
   messageReceived,
   chatTypingReceived,
   chatRejected,

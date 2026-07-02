@@ -1,5 +1,6 @@
 export * from "./config";
 export * from "./features/chat/handlers";
+export * from "./features/matchmaking/handlers";
 export * from "./features/presence/events";
 export * from "./features/presence/handlers";
 export * from "./logger";

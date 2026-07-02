@@ -16,6 +16,7 @@ import {
   publishBusyStatus,
   sendPresenceSnapshot,
 } from "./events";
+import { handleMatchmakeDisconnect } from "../matchmaking/handlers";
 
 const publishLocalAndRemote = async (
   socket: RealtimeSocket,
@@ -167,6 +168,8 @@ export const handleSocketClose = async (socket: RealtimeSocket) => {
       });
     }
   }
+
+  await handleMatchmakeDisconnect(userId);
 
   const removedPresence = await realtimeStore.removeUser(userId, connectionToken);
   if (!removedPresence) {

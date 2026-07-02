@@ -8,6 +8,9 @@ const BUSY_KEY = "presence:busy";
 const CHANNELS_KEY = "presence:channels";
 const CONNECTION_PREFIX = "presence:connection:";
 const CHANNEL_STATE_PREFIX = "presence:channel-state:";
+const MATCHMAKING_QUEUE_KEY = "matchmaking:queue";
+const MATCHMAKING_WAITING_KEY = "matchmaking:waiting";
+const MATCHMAKING_LOCK_KEY = "matchmaking:poller-lock";
 
 export const instanceId = crypto.randomUUID();
 
@@ -48,7 +51,10 @@ const parseUser = (value: string | null): OnlineUser | null => {
 
 /** Remove all presence keys so stale data from crashed/restarted instances is cleared. */
 const flushPresence = async () => {
-  const keysToDelete: string[] = [USERS_KEY, ONLINE_KEY, BUSY_KEY, CHANNELS_KEY];
+  const keysToDelete: string[] = [
+    USERS_KEY, ONLINE_KEY, BUSY_KEY, CHANNELS_KEY,
+    MATCHMAKING_QUEUE_KEY, MATCHMAKING_WAITING_KEY, MATCHMAKING_LOCK_KEY,
+  ];
 
   // Collect per-user connection keys
   const userIds = await redis.hkeys(USERS_KEY);
@@ -241,5 +247,122 @@ export const realtimeStore = {
 
     await redis.hdel(BUSY_KEY, ...members);
     return [...members];
+  },
+
+  // ── Matchmaking ───────────────────────────────────────────────────────────
+
+  matchmakeJoin: async (userId: string) => {
+    const timestamp = Date.now().toString();
+    await Promise.all([
+      redis.hset(MATCHMAKING_WAITING_KEY, userId, timestamp),
+      redis.expire(MATCHMAKING_WAITING_KEY, 86400), // Refresh TTL to 24h
+      redis.rpush(MATCHMAKING_QUEUE_KEY, userId),
+    ]);
+  },
+
+  matchmakeLeave: async (userId: string) => {
+    await Promise.all([
+      redis.hdel(MATCHMAKING_WAITING_KEY, userId),
+      // Remove from queue list using LREM (O(N) but typically small queue)
+      // This prevents memory leaks from stale entries accumulating
+      redis.lrem(MATCHMAKING_QUEUE_KEY, 1, userId),
+    ]);
+  },
+
+  matchmakeIsWaiting: async (userId: string) =>
+    redis.hexists(MATCHMAKING_WAITING_KEY, userId),
+
+  /** Returns approximate queue length (may include some stale entries). */
+  matchmakeQueueLength: async () => redis.llen(MATCHMAKING_QUEUE_KEY),
+
+  /** Returns the count of users currently in the waiting state (accurate). */
+  matchmakeWaitingCount: async () => redis.hlen(MATCHMAKING_WAITING_KEY),
+
+  /** Pop userIds from queue head until we find one that is still valid. */
+  matchmakePopOne: async (): Promise<string | null> => {
+    const MAX_POPS = 50; // avoid infinite loop on very stale queue
+    for (let i = 0; i < MAX_POPS; i++) {
+      const userId = await redis.lpop(MATCHMAKING_QUEUE_KEY);
+      if (!userId) return null;
+
+      const [waiting, online, busy] = await Promise.all([
+        redis.hexists(MATCHMAKING_WAITING_KEY, userId),
+        redis.hexists(USERS_KEY, userId),
+        redis.hexists(BUSY_KEY, userId),
+      ]);
+
+      if (waiting && online && !busy) {
+        // Valid user - return without removing from waiting (caller will handle)
+        return userId;
+      }
+      // Stale entry — remove from waiting hash if still there and continue
+      if (waiting) await redis.hdel(MATCHMAKING_WAITING_KEY, userId);
+    }
+    return null;
+  },
+
+  /** Try to pop two valid users atomically for pairing. Returns [userA, userB] or null. */
+  matchmakePopPair: async (): Promise<[string, string] | null> => {
+    const userA = await realtimeStore.matchmakePopOne();
+    if (!userA) return null;
+
+    const userB = await realtimeStore.matchmakePopOne();
+    if (!userB) {
+      // Only one user in queue — re-add userA
+      await redis.rpush(MATCHMAKING_QUEUE_KEY, userA);
+      return null;
+    }
+
+    return [userA, userB];
+  },
+
+  /** Try to acquire the poller lock for this instance. Returns true if acquired. */
+  matchmakeAcquireLock: async (): Promise<boolean> => {
+    const result = await redis.set(
+      MATCHMAKING_LOCK_KEY, instanceId, "NX", "EX", 5,
+    );
+    if (result === "OK") return true;
+    return (await redis.get(MATCHMAKING_LOCK_KEY)) === instanceId;
+  },
+
+  /** Clean up stale queue entries (for periodic maintenance). */
+  matchmakeCleanupQueue: async (): Promise<number> => {
+    const queueLength = await redis.llen(MATCHMAKING_QUEUE_KEY);
+    if (queueLength === 0) return 0;
+
+    // Get all userIds from the queue
+    const allUserIds = await redis.lrange(MATCHMAKING_QUEUE_KEY, 0, -1);
+    if (allUserIds.length === 0) return 0;
+
+    // Check which ones are still valid (waiting + online + not busy)
+    const validChecks = await Promise.all(
+      allUserIds.map(async (userId) => {
+        const [waiting, online, busy] = await Promise.all([
+          redis.hexists(MATCHMAKING_WAITING_KEY, userId),
+          redis.hexists(USERS_KEY, userId),
+          redis.hexists(BUSY_KEY, userId),
+        ]);
+        return waiting && online && !busy;
+      }),
+    );
+
+    const validUserIds = allUserIds.filter((_, index) => validChecks[index]);
+    const staleCount = allUserIds.length - validUserIds.length;
+
+    if (staleCount > 0) {
+      // Rebuild the queue with only valid entries
+      await redis.del(MATCHMAKING_QUEUE_KEY);
+      if (validUserIds.length > 0) {
+        await redis.rpush(MATCHMAKING_QUEUE_KEY, ...validUserIds);
+      }
+
+      // Clean up stale waiting hash entries
+      const staleUserIds = allUserIds.filter((_, index) => !validChecks[index]);
+      if (staleUserIds.length > 0) {
+        await redis.hdel(MATCHMAKING_WAITING_KEY, ...staleUserIds);
+      }
+    }
+
+    return staleCount;
   },
 };

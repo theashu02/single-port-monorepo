@@ -2,6 +2,8 @@ import { configureStore } from "@reduxjs/toolkit";
 import testReducer from "./slices/testSlice";
 import chatReducer from "./slices/chatSlice";
 import presenceReducer from "./slices/presenceSlice";
+import matchmakingReducer from "./slices/matchmakingSlice";
+import discoverChatReducer from "./slices/discoverChatSlice";
 
 export const makeStore = () => {
   return configureStore({
@@ -9,6 +11,8 @@ export const makeStore = () => {
       test: testReducer,
       chat: chatReducer,
       presence: presenceReducer,
+      matchmaking: matchmakingReducer,
+      discoverChat: discoverChatReducer,
     },
   });
 };

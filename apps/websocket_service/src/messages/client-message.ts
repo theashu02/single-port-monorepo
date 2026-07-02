@@ -71,6 +71,9 @@ export const parseClientMessage = (raw: unknown): ClientMessage | null => {
       channel: parsed.channel,
       text: parsed.text,
     };
+    if (typeof parsed.clientId === "string" && parsed.clientId) {
+      msg.clientId = parsed.clientId;
+    }
     return msg;
   }
 
@@ -91,6 +94,19 @@ export const parseClientMessage = (raw: unknown): ClientMessage | null => {
       type: "end_chat",
       channel: parsed.channel,
     };
+  }
+
+  if (parsed.type === "matchmake_join") {
+    return { type: "matchmake_join" };
+  }
+
+  if (parsed.type === "matchmake_leave") {
+    return { type: "matchmake_leave" };
+  }
+
+  if (parsed.type === "matchmake_ready") {
+    if (typeof parsed.channel !== "string" || !parsed.channel) return null;
+    return { type: "matchmake_ready", channel: parsed.channel };
   }
 
   return null;

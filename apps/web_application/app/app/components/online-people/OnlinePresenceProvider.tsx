@@ -16,6 +16,7 @@ import {
   chatBusy,
   chatExpired,
   chatReady,
+  matchmakeSuccess,
   chatRejected,
   chatTypingReceived,
   inviteReceived,
@@ -36,6 +37,12 @@ import {
   type OnlineUser,
   type PresenceStatus,
 } from "@/lib/redux/slices/presenceSlice";
+import {
+  matchmakeQueued,
+  matchmakeFound,
+  matchmakeCancelled,
+  matchmakeStarted,
+} from "@/lib/redux/slices/matchmakingSlice";
 
 export type {
   OnlineUser,
@@ -53,6 +60,8 @@ interface OnlinePresenceActions {
   sendMessage: (channel: string, text: string) => boolean;
   sendTypingStatus: (channel: string, isTyping: boolean) => boolean;
   endChat: (channel: string) => boolean;
+  startMatchmaking: () => boolean;
+  cancelMatchmaking: () => boolean;
 }
 
 interface OnlinePresenceContextValue extends OnlinePresenceActions {
@@ -103,13 +112,22 @@ type ServerEvent =
   | { type: "chat_rejected"; byId: string }
   | { type: "chat_busy"; byId: string }
   | { type: "chat_expired"; byId: string }
-  | { type: "chat_message"; channel: string; fromId: string; text: string }
+  | {
+      type: "chat_message";
+      channel: string;
+      fromId: string;
+      text: string;
+      id?: string;
+    }
   | {
       type: "chat_typing";
       channel: string;
       fromId: string;
       isTyping: boolean;
-    };
+    }
+  | { type: "matchmake_queued"; position: number }
+  | { type: "matchmake_found"; peer: OnlineUser; channel: string }
+  | { type: "matchmake_cancelled"; reason: string };
 
 function parseServerEvent(raw: string): ServerEvent | null {
   let parsed: unknown;
@@ -179,7 +197,8 @@ function parseServerEvent(raw: string): ServerEvent | null {
       const channel = parseNonEmptyString(parsed.channel);
       const fromId = parseNonEmptyString(parsed.fromId);
       if (!channel || !fromId || typeof parsed.text !== "string") return null;
-      return { type: "chat_message", channel, fromId, text: parsed.text };
+      const id = parseNonEmptyString(parsed.id);
+      return { type: "chat_message", channel, fromId, text: parsed.text, id: id ?? undefined };
     }
     case "chat_typing": {
       const channel = parseNonEmptyString(parsed.channel);
@@ -192,6 +211,21 @@ function parseServerEvent(raw: string): ServerEvent | null {
         fromId,
         isTyping: parsed.isTyping,
       };
+    }
+    case "matchmake_queued": {
+      if (typeof parsed.position !== "number") return null;
+      return { type: "matchmake_queued", position: parsed.position };
+    }
+    case "matchmake_found": {
+      const peer = parseOnlineUser(parsed.peer);
+      const channel = parseNonEmptyString(parsed.channel);
+      return peer && channel
+        ? { type: "matchmake_found", peer, channel }
+        : null;
+    }
+    case "matchmake_cancelled": {
+      const reason = parseNonEmptyString(parsed.reason);
+      return reason ? { type: "matchmake_cancelled", reason } : null;
     }
     default:
       return null;
@@ -417,9 +451,10 @@ export function OnlinePresenceProvider({
             return;
           case "chat_message": {
             const ts = Date.now();
+            const msgId = msg.id ?? createClientMessageId(msg.fromId, ts);
             dispatchRef.current(
               messageReceived({
-                id: createClientMessageId(msg.fromId, ts),
+                id: msgId,
                 channel: msg.channel,
                 fromId: msg.fromId,
                 text: msg.text,
@@ -436,6 +471,26 @@ export function OnlinePresenceProvider({
                 isTyping: msg.isTyping,
               }),
             );
+            return;
+          case "matchmake_queued":
+            dispatchRef.current(
+              matchmakeQueued({ position: msg.position }),
+            );
+            return;
+          case "matchmake_found":
+            socket.send(
+              JSON.stringify({
+                type: "matchmake_ready",
+                channel: msg.channel,
+              }),
+            );
+            dispatchRef.current(matchmakeFound());
+            dispatchRef.current(
+              matchmakeSuccess({ peer: msg.peer, channel: msg.channel }),
+            );
+            return;
+          case "matchmake_cancelled":
+            dispatchRef.current(matchmakeCancelled());
             return;
         }
       };
@@ -473,6 +528,7 @@ export function OnlinePresenceProvider({
 
         const delay = Math.min(1000 * 2 ** reconnectAttempts, 5000);
         reconnectAttempts += 1;
+        
         reconnectTimer = window.setTimeout(connect, delay);
       };
     };
@@ -509,9 +565,26 @@ export function OnlinePresenceProvider({
   );
 
   const sendMessage = useCallback(
-    (channel: string, text: string) =>
-      send({ type: "chat_message", channel, text }),
-    [send],
+    (channel: string, text: string) => {
+      if (!identity) return false;
+
+      const ts = Date.now();
+      const id = createClientMessageId(identity.id, ts);
+      const ok = send({ type: "chat_message", channel, text, clientId: id });
+      if (!ok) return false;
+
+      dispatch(
+        messageReceived({
+          id,
+          channel,
+          fromId: identity.id,
+          text,
+          ts,
+        }),
+      );
+      return true;
+    },
+    [dispatch, identity, send],
   );
 
   const sendTypingStatus = useCallback(
@@ -525,6 +598,18 @@ export function OnlinePresenceProvider({
     [send],
   );
 
+  const startMatchmaking = useCallback(() => {
+    const ok = send({ type: "matchmake_join" });
+    if (ok) dispatch(matchmakeStarted());
+    return ok;
+  }, [send, dispatch]);
+
+  const cancelMatchmaking = useCallback(() => {
+    const ok = send({ type: "matchmake_leave" });
+    if (ok) dispatch(matchmakeCancelled());
+    return ok;
+  }, [send, dispatch]);
+
   const actions = useMemo<OnlinePresenceActions>(
     () => ({
       requestChat,
@@ -533,14 +618,18 @@ export function OnlinePresenceProvider({
       sendMessage,
       sendTypingStatus,
       endChat,
+      startMatchmaking,
+      cancelMatchmaking,
     }),
     [
       acceptChat,
+      cancelMatchmaking,
       endChat,
       rejectChat,
       requestChat,
       sendMessage,
       sendTypingStatus,
+      startMatchmaking,
     ],
   );
 

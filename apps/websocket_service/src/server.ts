@@ -13,6 +13,7 @@ import {
   subscribeRealtimeBus,
 } from "./state/redis-realtime";
 import { toRealtimeSocket } from "./transport/socket";
+import { startMatchmakingPoller } from "./features/matchmaking/handlers";
 
 interface AppWithServer {
   server?: { publish(topic: string, data: string): void } | null;
@@ -95,6 +96,7 @@ export const startWebSocketService = async (port = SERVICE_PORT) => {
   const app = createWebSocketService().listen(port);
   configureServiceMetrics(app);
   await subscribeRealtimeBus((topic, data) => app.server?.publish(topic, data));
+  startMatchmakingPoller((topic, data) => app.server?.publish(topic, data));
 
   logInfo("service.started", {
     port: app.server?.port ?? null,

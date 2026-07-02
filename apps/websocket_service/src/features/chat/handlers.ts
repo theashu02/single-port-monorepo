@@ -19,6 +19,11 @@ import {
   publishBusyStatus,
   sendPresenceSnapshot,
 } from "../presence/events";
+import {
+  handleMatchmakeJoin,
+  handleMatchmakeLeave,
+  handleMatchmakeReady,
+} from "../matchmaking/handlers";
 
 const publishLocalAndRemote = async (
   socket: RealtimeSocket,
@@ -82,6 +87,21 @@ export const handleSocketMessage = async (
       userId,
       messageType: rawMessageKind(rawMessage),
     });
+    return;
+  }
+
+  if (message.type === "matchmake_join") {
+    await handleMatchmakeJoin(socket);
+    return;
+  }
+
+  if (message.type === "matchmake_leave") {
+    await handleMatchmakeLeave(socket);
+    return;
+  }
+
+  if (message.type === "matchmake_ready") {
+    await handleMatchmakeReady(socket, message.channel);
     return;
   }
 
@@ -342,6 +362,7 @@ export const handleSocketMessage = async (
     channel: message.channel,
     fromId: userId,
     text: message.text,
+    id: message.clientId,
   };
   await publishLocalAndRemote(
     socket,

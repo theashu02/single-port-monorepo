@@ -13,11 +13,27 @@ export type ClientMessage =
   | RejectChatMessage
   | ChatMessagePayload
   | ChatTypingStatusMessage
-  | EndChatMessage;
+  | EndChatMessage
+  | MatchmakeJoinMessage
+  | MatchmakeLeaveMessage
+  | MatchmakeReadyMessage;
 
 export interface ChatRequestMessage {
   type: "chat_request";
   targetId: string;
+}
+
+export interface MatchmakeJoinMessage {
+  type: "matchmake_join";
+}
+
+export interface MatchmakeLeaveMessage {
+  type: "matchmake_leave";
+}
+
+export interface MatchmakeReadyMessage {
+  type: "matchmake_ready";
+  channel: string;
 }
 
 export interface AcceptChatMessage {
@@ -36,6 +52,7 @@ export interface ChatMessagePayload {
   type: "chat_message";
   channel: string;
   text: string;
+  clientId?: string;
 }
 
 export interface ChatTypingStatusMessage {
@@ -113,6 +130,7 @@ export interface ChatMessageEvent {
   channel: string;
   fromId: string;
   text: string;
+  id?: string;
 }
 
 export interface ChatTypingEvent {
@@ -120,4 +138,20 @@ export interface ChatTypingEvent {
   channel: string;
   fromId: string;
   isTyping: boolean;
+}
+
+export interface MatchmakeQueuedEvent {
+  type: "matchmake_queued";
+  position: number;
+}
+
+export interface MatchmakeFoundEvent {
+  type: "matchmake_found";
+  peer: OnlineUser;
+  channel: string;
+}
+
+export interface MatchmakeCancelledEvent {
+  type: "matchmake_cancelled";
+  reason: "user_left" | "user_disconnected" | "already_busy";
 }

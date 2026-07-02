@@ -12,9 +12,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
 
+import { usePathname } from "next/navigation";
+
 const TYPING_IDLE_MS = 1000
 
 const ChatWindow: React.FC = memo(() => {
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const phase = useAppSelector(selectChatPhase);
   const peer = useAppSelector(selectChatPeer);
@@ -136,7 +139,7 @@ const ChatWindow: React.FC = memo(() => {
     dispatch(chatClosed());
   }, [channel, dispatch, endChat, stopTyping]);
 
-  if (phase !== "open" || !peer || !channel) return null;
+  if (phase !== "open" || !peer || !channel || pathname?.includes("/discover")) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] flex flex-col rounded-[2.5rem] border border-border bg-background/80 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in slide-in-from-right-8 duration-500 overflow-hidden ring-1 ring-border/50">

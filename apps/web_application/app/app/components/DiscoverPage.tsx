@@ -1,103 +1,442 @@
 "use client";
 
-import Image from "next/image";
-import { Flame, Send, Smile, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useState, useRef, useLayoutEffect, useMemo } from "react";
+import { Sparkles, Search, X, ArrowUp, RefreshCw, MessageCircle } from "lucide-react";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
+import {
+  selectMatchmakingPhase,
+  selectQueuePosition,
+  selectSearchStartedAt,
+} from "@/lib/redux/slices/matchmakingSlice";
+import {
+  selectChatPhase,
+  selectChatChannel,
+  selectChatPeer,
+  selectChannelMessages,
+  selectIsPeerTyping,
+  chatClosed,
+} from "@/lib/redux/slices/chatSlice";
+import { selectCurrentUserId, selectUserCount } from "@/lib/redux/slices/presenceSlice";
+import { useOnlinePresenceActions } from "./online-people/OnlinePresenceProvider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import MessageRow from "./online-people/MessageRow";
 
-export default function DiscoverPage() {
+const TYPING_IDLE_MS = 1000;
+
+/** Format elapsed seconds as m:ss */
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function useElapsedTimer(startedAt: number | null): number {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+
+  return startedAt ? Math.max(0, Math.floor((now - startedAt) / 1000)) : 0;
+}
+
+// ── Idle State ────────────────────────────────────────────────────────────────
+
+function IdleView({
+  onStart,
+  onlineCount,
+}: {
+  onStart: () => void;
+  onlineCount: number;
+}) {
   return (
-    <div className="w-full h-full min-w-0">
-      <div className="h-full" style={{ opacity: 1, transform: 'none' }}>
-        <div className="flex flex-col h-full p-4 lg:p-6 gap-4 min-w-0">
-          
-          <div className="relative flex-1 min-h-0 rounded-3xl overflow-hidden glass border border-white/10 grid-bg">
-            
-            <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-violet-600/30 blur-3xl"></div>
-            <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl"></div>
-            <div className="absolute top-1/3 left-1/2 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl"></div>
-            
-            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6" style={{ opacity: 1, transform: 'none' }}>
-              <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/20 border border-rose-400/30">
-                <span className="relative h-2 w-2 rounded-full bg-rose-400 pulse-ring"></span>
-                <span className="text-[11px] font-bold tracking-widest uppercase text-rose-200">Live Match</span>
-              </div>
-              <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                <Flame className="h-4 w-4" />
-                <span className="text-xs font-semibold text-white/80">98% match</span>
-              </div>
-              
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-linear-to-br from-violet-500 via-fuchsia-500 to-cyan-400 blur-2xl opacity-60"></div>
-                <span className="flex shrink-0 overflow-hidden rounded-full relative h-36 w-36 ring-4 ring-white/20 shadow-2xl">
-                  <Image className="aspect-square h-full w-full object-cover" src="https://api.dicebear.com/7.x/adventurer/svg?seed=pixel_dreamer&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear" alt="Avatar" fill />
-                </span>
-                <span className="pulse-ring absolute bottom-2 right-2 h-5 w-5 rounded-full bg-emerald-400 ring-4 ring-[#0c0a18]"></span>
-              </div>
-              
-              <h2 className="mt-6 text-3xl font-black tracking-tight">pixel_dreamer<span className="text-white/40 text-lg font-normal ml-2">· 21</span></h2>
-              <p className="mt-1 text-sm text-white/60">🇯🇵 Tokyo</p>
-              
-              <div className="flex gap-2 mt-4 flex-wrap justify-center">
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-white/80">#anime</span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-white/80">#lo-fi</span>
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-white/80">#art</span>
-              </div>
-              
-            
-              <div className="mt-8 flex items-center gap-3">
-                <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/15 text-white" tabIndex={0}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic h-5 w-5" aria-hidden="true"><path d="M12 19v3"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><rect x="9" y="2" width="6" height="13" rx="3"></rect></svg>
-                </button>
-                <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/15 text-white" tabIndex={0}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video h-5 w-5" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect></svg>
-                </button>
-                <button className="h-14 px-7 rounded-full bg-linear-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white font-bold text-sm tracking-wide shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition flex items-center gap-2" tabIndex={0} style={{ transform: 'none' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shuffle h-4 w-4" aria-hidden="true"><path d="m18 14 4 4-4 4"></path><path d="m18 2 4 4-4 4"></path><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"></path><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"></path></svg> Next Vibe
-                </button>
-                <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/5 text-white/70 hover:bg-rose-500/20 hover:text-rose-300" tabIndex={0} style={{ transform: 'none' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart h-5 w-5" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
-                </button>
-                <button className="grid place-items-center h-12 w-12 rounded-full border border-white/10 transition bg-white/5 text-white/50 hover:bg-white/10 hover:text-white" tabIndex={0} style={{ transform: 'none' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-skip-forward h-5 w-5" aria-hidden="true"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" x2="19" y1="5" y2="19"></line></svg>
-                </button>
-              </div>
-            </div>
+    <div className="flex flex-col items-center justify-center gap-8 px-6 text-center h-full">
+      {/* Decorative orb */}
+      <div className="relative">
+        <div className="h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-cyan-400/30 blur-2xl absolute inset-0 animate-pulse" />
+        <div className="relative h-32 w-32 rounded-full bg-gradient-to-br from-violet-500/10 to-cyan-400/10 border border-white/10 grid place-items-center">
+          <Sparkles className="h-12 w-12 text-violet-400" />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">Discover Someone New</h2>
+        <p className="mt-2 text-sm text-white/50 max-w-xs mx-auto">
+          Get matched with a random online user for a direct anonymous conversation.
+        </p>
+      </div>
+
+      {/* Online count */}
+      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
+          {onlineCount.toLocaleString()} online now
+        </span>
+      </div>
+
+      {/* Start button */}
+      <button
+        id="start-matching-btn"
+        onClick={onStart}
+        className="group relative px-10 py-4 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 text-white font-bold text-base tracking-wide shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all hover:scale-105 active:scale-95"
+      >
+        <span className="flex items-center gap-2">
+          <Search className="h-5 w-5" />
+          Start Matching
+        </span>
+      </button>
+    </div>
+  );
+}
+
+// ── Searching State ───────────────────────────────────────────────────────────
+
+function SearchingView({
+  onCancel,
+  elapsed,
+  queuePosition,
+}: {
+  onCancel: () => void;
+  elapsed: number;
+  queuePosition: number | null;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-8 px-6 text-center h-full">
+      {/* Animated pulse rings */}
+      <div className="relative flex items-center justify-center">
+        <div className="absolute h-40 w-40 rounded-full border border-violet-500/30 animate-ping" style={{ animationDuration: "2s" }} />
+        <div className="absolute h-32 w-32 rounded-full border border-fuchsia-500/20 animate-ping" style={{ animationDuration: "2.5s" }} />
+        <div className="absolute h-24 w-24 rounded-full border border-cyan-400/20 animate-ping" style={{ animationDuration: "3s" }} />
+        <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-white/10 grid place-items-center">
+          <RefreshCw className="h-8 w-8 text-violet-400 animate-spin" style={{ animationDuration: "3s" }} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">Finding Your Match</h2>
+        <p className="mt-2 text-sm text-white/50">
+          Vibing through online queues to find your partner…
+        </p>
+      </div>
+
+      {/* Timer & position */}
+      <div className="flex items-center gap-4 justify-center">
+        <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10">
+          <span className="text-sm font-mono font-medium text-white/70">
+            {formatElapsed(elapsed)}
+          </span>
+        </div>
+        {queuePosition !== null && (
+          <div className="px-4 py-2 rounded-full bg-violet-500/10 border border-violet-400/20">
+            <span className="text-sm font-medium text-violet-300">
+              #{queuePosition} in queue
+            </span>
           </div>
-          
-        
-          <div className="rounded-3xl glass border border-white/10 overflow-hidden flex flex-col h-[280px]">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
-              <div className="flex items-center gap-2">
-               <Sparkles className='h-4 w-4'/>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Live Chat</span>
-              </div>
-              <span className="text-[10px] text-white/40">end-to-end • anonymous</span>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
-              <div className="flex justify-start" style={{ opacity: 1, transform: 'none' }}>
-                <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-white/8 text-white/90 rounded-bl-sm border border-white/5">yo new here? 👀</div>
-              </div>
-              <div className="flex justify-end" style={{ opacity: 1, transform: 'none' }}>
-                <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-linear-to-r from-violet-500 to-fuchsia-500 text-white rounded-br-sm">haha yeah just vibing</div>
-              </div>
-              <div className="flex justify-start" style={{ opacity: 1, transform: 'none' }}>
-                <div className="max-w-[70%] px-4 py-2 rounded-2xl text-sm bg-white/8 text-white/90 rounded-bl-sm border border-white/5">based. what music u into?</div>
-              </div>
-            </div>
-            
-            <div className="p-3 border-t border-white/5 flex items-center gap-2">
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 w-10 rounded-full text-white/60 hover:text-white hover:bg-white/5">
-                <Smile className="h-24 w-24" />
-              </button>
-              <input className="flex w-full border px-3 py-1 shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm flex-1 h-10 bg-white/5 border-white/10 rounded-full text-sm placeholder:text-white/30 focus-visible:ring-violet-500/50" placeholder="Drop a vibe..." defaultValue="" />
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow hover:bg-primary/90 py-2 h-10 px-4 rounded-full bg-linear-to-r from-violet-500 to-cyan-400 text-white font-semibold text-sm hover:opacity-90">
-                <Send className="h-24 w-24"/> Send
-              </button>
-            </div>
+        )}
+      </div>
+
+      {/* Cancel button */}
+      <button
+        id="cancel-matching-btn"
+        onClick={onCancel}
+        className="flex items-center gap-2 px-8 py-3 rounded-full border border-white/10 bg-white/5 text-white/70 font-medium hover:bg-white/10 hover:text-white transition-all active:scale-95"
+      >
+        <X className="h-4 w-4" />
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// ── Inline ChatGPT/Gemini style Chat View ──────────────────────────────────────────
+
+interface ChatUser {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+
+interface DiscoverChatViewProps {
+  peer: ChatUser;
+  channel: string;
+  currentUserId: string | null;
+}
+
+function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProps) {
+  const dispatch = useAppDispatch();
+  const messages = useAppSelector(selectChannelMessages(channel));
+  const selectPeerTyping = useMemo(() => selectIsPeerTyping(channel, peer.id), [channel, peer.id]);
+  const isPeerTyping = useAppSelector(selectPeerTyping);
+  const { sendMessage, sendTypingStatus, endChat } = useOnlinePresenceActions();
+
+  const [draft, setDraft] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activeChannelRef = useRef<string | null>(null);
+  const closeSentRef = useRef(false);
+  const typingChannelRef = useRef<string | null>(null);
+  const typingIdleTimerRef = useRef<number | null>(null);
+
+  const clearTypingTimer = useCallback(() => {
+    if (!typingIdleTimerRef.current) return;
+    window.clearTimeout(typingIdleTimerRef.current);
+    typingIdleTimerRef.current = null;
+  }, []);
+
+  const stopTyping = useCallback(() => {
+    clearTypingTimer();
+    const typingChannel = typingChannelRef.current;
+    if (!typingChannel) return;
+
+    sendTypingStatus(typingChannel, false);
+    typingChannelRef.current = null;
+  }, [clearTypingTimer, sendTypingStatus]);
+
+  const startTyping = useCallback(
+    (targetChannel: string) => {
+      if (typingChannelRef.current !== targetChannel) {
+        stopTyping();
+        if (sendTypingStatus(targetChannel, true)) {
+          typingChannelRef.current = targetChannel;
+        }
+      }
+
+      clearTypingTimer();
+      typingIdleTimerRef.current = window.setTimeout(stopTyping, TYPING_IDLE_MS);
+    },
+    [clearTypingTimer, sendTypingStatus, stopTyping],
+  );
+
+  useEffect(() => {
+    activeChannelRef.current = channel;
+    closeSentRef.current = false;
+    
+    return () => {
+      stopTyping();
+    };
+  }, [channel, stopTyping]);
+
+  // Window pagehide / unload cleanup to prevent ghost sessions
+  useEffect(() => {
+    const endActiveChatOnUnload = () => {
+      stopTyping();
+      const activeChannel = activeChannelRef.current;
+      if (!activeChannel || closeSentRef.current) return;
+      closeSentRef.current = true;
+      endChat(activeChannel);
+    };
+
+    window.addEventListener("pagehide", endActiveChatOnUnload);
+    return () => {
+      window.removeEventListener("pagehide", endActiveChatOnUnload);
+    };
+  }, [endChat, stopTyping]);
+
+  useLayoutEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = useCallback(() => {
+    const text = draft.trim();
+    if (!text || !channel) return;
+    stopTyping();
+    const sent = sendMessage(channel, text);
+    if (sent) {
+      setDraft("");
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+    }
+  }, [channel, draft, sendMessage, stopTyping]);
+
+  const handleDraftChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setDraft(value);
+
+      // Auto-grow textarea height dynamically
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+      }
+
+      if (!channel) return;
+      if (value.trim()) {
+        startTyping(channel);
+      } else {
+        stopTyping();
+      }
+    },
+    [channel, startTyping, stopTyping],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const handleClose = useCallback(() => {
+    stopTyping();
+    if (channel) {
+      closeSentRef.current = true;
+      endChat(channel);
+    }
+    dispatch(chatClosed());
+  }, [channel, dispatch, endChat, stopTyping]);
+
+  return (
+    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden bg-background/95">
+      <div className="flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+              <AvatarImage src={peer.avatarUrl} />
+              <AvatarFallback className="bg-muted text-muted-foreground font-semibold">{peer.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
           </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-foreground tracking-tight">{peer.name}</span>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isPeerTyping ? "text-primary animate-pulse" : "text-emerald-500"}`}>
+              {isPeerTyping ? "Typing..." : "Matched"}
+            </span>
+          </div>
+        </div>
+
+        <Button variant="ghost" size="sm" onClick={handleClose} className="h-9 rounded-full px-4 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground">
+          Disconnect
+        </Button>
+      </div>
+
+      <div className="relative flex-1 overflow-hidden">
+        <ScrollArea className="h-full px-4 py-5 sm:px-6">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pb-4">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center pt-24 text-center">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-muted/40">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                </div>
+                <p className="max-w-xs text-sm font-medium text-muted-foreground">
+                  You are connected with {peer.name}. Start the conversation below.
+                </p>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <MessageRow
+                  key={msg.id}
+                  msg={msg}
+                  isMine={msg.fromId !== "__system__" && msg.fromId === currentUserId}
+                />
+              ))
+            )}
+            <div ref={bottomRef} />
+          </div>
+        </ScrollArea>
+      </div>
+
+      <div className="w-full border-t border-border bg-background/90 px-4 py-4 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-[1.75rem] border border-border bg-muted/40 p-2 pl-4 shadow-sm transition-all focus-within:border-primary/50 focus-within:bg-background focus-within:ring-4 focus-within:ring-primary/10">
+          <Textarea
+            ref={textareaRef}
+            rows={1}
+            value={draft}
+            onChange={handleDraftChange}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message ${peer.name}`}
+            className="max-h-[160px] min-h-[40px] flex-1 resize-none border-0 bg-transparent px-0 py-2.5 text-[15px] text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 scrollbar-hide"
+          />
           
+          <div className="flex items-center gap-1.5 shrink-0 self-center pr-1">
+            <Button
+              size="icon"
+              onClick={handleSend}
+              disabled={!draft.trim()}
+              className="h-10 w-10 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:bg-muted disabled:text-muted-foreground"
+            >
+              <ArrowUp className="h-5 w-5 stroke-[2.5px]" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="hidden">
+          <span>Anonymous pairing • Encrypted conversation • Press Enter to send</span>
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────────────
+
+export default function DiscoverPage() {
+  const { startMatchmaking, cancelMatchmaking } = useOnlinePresenceActions();
+  const matchmakingPhase = useAppSelector(selectMatchmakingPhase);
+  const queuePosition = useAppSelector(selectQueuePosition);
+  const searchStartedAt = useAppSelector(selectSearchStartedAt);
+  const chatPhase = useAppSelector(selectChatPhase);
+  const chatPeer = useAppSelector(selectChatPeer);
+  const onlineCount = useAppSelector(selectUserCount);
+  const currentUserId = useAppSelector(selectCurrentUserId);
+  const elapsed = useElapsedTimer(searchStartedAt);
+  const chatChannel = useAppSelector(selectChatChannel);
+
+  const handleStart = useCallback(() => {
+    startMatchmaking();
+  }, [startMatchmaking]);
+
+  const handleCancel = useCallback(() => {
+    cancelMatchmaking();
+  }, [cancelMatchmaking]);
+
+  // Determine what to show
+  const isInChat = chatPhase === "open";
+  const isSearching = matchmakingPhase === "searching";
+
+  return (
+    <div className="w-full h-full min-w-0">
+      <div className="h-full" style={{ opacity: 1, transform: "none" }}>
+        <div className="flex flex-col h-full p-4 lg:p-6 gap-4 min-w-0">
+          <div className="relative flex-1 min-h-0 rounded-3xl overflow-hidden glass border border-white/10 grid-bg">
+            {/* Background orbs */}
+            <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-violet-600/30 blur-3xl" />
+            <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="absolute top-1/3 left-1/2 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
+
+            {/* Content */}
+            <div className="relative z-10 h-full w-full flex flex-col items-center justify-center">
+              {isInChat && chatPeer && chatChannel ? (
+                <DiscoverChatView
+                  peer={chatPeer}
+                  channel={chatChannel}
+                  currentUserId={currentUserId}
+                />
+              ) : isSearching ? (
+                <SearchingView
+                  onCancel={handleCancel}
+                  elapsed={elapsed}
+                  queuePosition={queuePosition}
+                />
+              ) : (
+                <IdleView onStart={handleStart} onlineCount={onlineCount} />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
