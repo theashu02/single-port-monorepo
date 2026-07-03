@@ -6,15 +6,21 @@ import dynamic from "next/dynamic";
 import Sidebar, { DashboardTab } from "./components/LeftSidebar";
 import Header from "./components/Header";
 import MobileNav from "./components/MobileNav";
-import { OnlinePresenceProvider } from "./components/online-people/OnlinePresenceProvider";
+import { OnlinePresenceProvider } from "./online-people/OnlinePresenceProvider";
 import StoreProvider from "@/lib/redux/StoreProvider";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 
-const ChatInvitePopup = dynamic(() => import("./components/online-people/ChatInvitePopup"), { ssr: false });
-const ChatWindow = dynamic(() => import("./components/online-people/ChatWindow"), { ssr: false });
+const ChatInvitePopup = dynamic(
+  () => import("./online-people/ChatInvitePopup"),
+  { ssr: false },
+);
+const ChatWindow = dynamic(
+  () => import("./online-people/ChatWindow"),
+  { ssr: false },
+);
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -31,7 +37,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activeTab = getActiveTab(pathname);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       <AuthProvider>
         <StoreProvider>
           <TooltipProvider>
@@ -41,7 +52,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                 <main className="flex-1 flex flex-col min-w-0 h-full relative">
                   <Header activeTab={activeTab} />
-                  <div className="flex-1 min-h-0 overflow-auto w-full">{children}</div>
+                  <div className="flex-1 min-h-0 overflow-auto w-full">
+                    {children}
+                  </div>
                 </main>
 
                 <MobileNav activeTab={activeTab} />

@@ -2,13 +2,18 @@
 
 import React, { memo, useCallback } from "react";
 import { Phone, User, X } from "lucide-react";
-import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { chatClosed, chatRequested, selectChatPeer, selectChatPhase } from "@/lib/redux/slices/chatSlice";
+import {
+  chatClosed,
+  chatRequested,
+  selectChatPeer,
+  selectChatPhase,
+} from "@/lib/redux/slices/chatSlice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
 
 const ChatInvitePopup: React.FC = memo(() => {
   const dispatch = useAppDispatch();
@@ -54,23 +59,39 @@ const ChatInvitePopup: React.FC = memo(() => {
 
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] uppercase tracking-wider font-bold border-none">
+                  <Badge
+                    variant="secondary"
+                    className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] uppercase tracking-wider font-bold border-none"
+                  >
                     Live Request
                   </Badge>
-                  <span className="text-[10px] text-muted-foreground font-medium uppercase">Just now</span>
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                    Just now
+                  </span>
                 </div>
-                <h3 className="text-lg font-semibold leading-none tracking-tight text-foreground">{peer.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-1">Started a new conversation</p>
+                <h3 className="text-lg font-semibold leading-none tracking-tight text-foreground">
+                  {peer.name}
+                </h3>
+                <p className="text-sm text-muted-foreground line-clamp-1">
+                  Started a new conversation
+                </p>
               </div>
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <Button variant="outline" onClick={handleReject} className="flex-1 h-11 rounded-xl border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all active:scale-95">
+              <Button
+                variant="outline"
+                onClick={handleReject}
+                className="flex-1 h-11 rounded-xl border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all active:scale-95"
+              >
                 <X className="mr-2 h-4 w-4" />
                 Decline
               </Button>
 
-              <Button onClick={handleAccept} className="flex-1 h-11 rounded-xl bg-primary hover:opacity-90 text-primary-foreground shadow-md transition-all active:scale-95">
+              <Button
+                onClick={handleAccept}
+                className="flex-1 h-11 rounded-xl bg-primary hover:opacity-90 text-primary-foreground shadow-md transition-all active:scale-95"
+              >
                 <Phone className="mr-2 h-4 w-4 fill-current" />
                 Accept
               </Button>

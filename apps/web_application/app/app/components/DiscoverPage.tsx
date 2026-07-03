@@ -16,7 +16,7 @@ import {
   selectCurrentUserId,
   selectUserCount,
 } from "@/lib/redux/slices/presenceSlice";
-import { useOnlinePresenceActions } from "./online-people/OnlinePresenceProvider";
+import { useOnlinePresenceActions } from "../online-people/OnlinePresenceProvider";
 
 import IdleView from "../discover/IdleView";
 import SearchingView from "../discover/SearchingView";

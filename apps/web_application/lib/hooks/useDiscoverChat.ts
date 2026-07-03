@@ -7,7 +7,7 @@ import {
   selectIsPeerTyping,
   chatClosed,
 } from "@/lib/redux/slices/chatSlice";
-import { useOnlinePresenceActions } from "@/app/app/components/online-people/OnlinePresenceProvider";
+import { useOnlinePresenceActions } from "@/app/app/online-people/OnlinePresenceProvider";
 
 const TYPING_IDLE_MS = 1000;
 

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ArrowUp, Sparkles, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
@@ -23,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useOnlinePresenceActions } from "./online-people/OnlinePresenceProvider";
+import { useOnlinePresenceActions } from "../online-people/OnlinePresenceProvider";
 
 const TYPING_IDLE_MS = 1000;
 const MAX_MESSAGE_LENGTH = 2000;
@@ -230,14 +236,7 @@ const DiscoverChatInterface: React.FC = () => {
     } else {
       dispatch(discoverChatMessageFailed({ id: messageId }));
     }
-  }, [
-    draft,
-    channel,
-    currentUserId,
-    stopTyping,
-    dispatch,
-    sendMessage,
-  ]);
+  }, [draft, channel, currentUserId, stopTyping, dispatch, sendMessage]);
 
   // ── Handle textarea change ────────────────────────────────────────────────
 
@@ -449,9 +448,7 @@ const DiscoverChatInterface: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsExpanded(true)}
                   placeholder={
-                    isConnected
-                      ? `Message ${peer.name}...`
-                      : "Reconnecting..."
+                    isConnected ? `Message ${peer.name}...` : "Reconnecting..."
                   }
                   disabled={!isConnected}
                   className="min-h-[52px] max-h-[120px] resize-none bg-muted/50 border-border focus-visible:ring-primary/20 focus-visible:border-primary/50 text-[15px] pr-12 py-3.5"
@@ -482,7 +479,11 @@ const DiscoverChatInterface: React.FC = () => {
             {/* Helper Text */}
             <div className="flex items-center justify-between mt-2 px-1">
               <p className="text-[11px] text-muted-foreground">
-                Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> to send
+                Press{" "}
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">
+                  Enter
+                </kbd>{" "}
+                to send
               </p>
               {!isConnected && (
                 <Badge variant="outline" className="text-[10px]">
