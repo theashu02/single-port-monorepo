@@ -1,315 +1,41 @@
 "use client";
 
-import React, { memo, useCallback, useMemo, useState } from "react";
-import {
-  MessageCircle,
-  Search,
-  Shield,
-  UsersRound,
-  Wifi,
-  WifiOff,
-  Zap,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import React from "react";
+import { Search, UsersRound, Wifi, WifiOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-import type { OnlineUser } from "./OnlinePresenceProvider";
-import { useOnlinePresence } from "./OnlinePresenceProvider";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { getStatusMessage } from "@/lib/utils/presenceUtils";
 import {
-  chatRequested,
-  selectChatPeer,
-  selectChatPhase,
-  selectIsLocalChatLocked,
-  type ChatPhase,
-} from "@/lib/redux/slices/chatSlice";
-import {
-  selectBusyUsersCount,
-  selectLoadedUserCount,
-  selectOtherUsersCount,
-} from "@/lib/redux/slices/presenceSlice";
-import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-
-type PresenceFilter = "all" | "others" | "you";
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function getAvatarUrl(id: string, name: string): string {
-  const seed = encodeURIComponent(id || name);
-  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&backgroundType=gradientLinear`;
-}
-
-function getStatusMessage(
-  status: ReturnType<typeof useOnlinePresence>["status"],
-  error: string | null,
-): string {
-  if (status === "connected") return "Realtime presence synced.";
-  if (status === "connecting" || status === "resolving-user")
-    return "Connecting to presence service…";
-  if (status === "unauthenticated")
-    return "Sign in or continue as a guest to appear online.";
-  return (
-    error ?? "Start websocket_service — this page reconnects automatically."
-  );
-}
-
-interface UserCardProps {
-  user: OnlineUser;
-  isCurrentUser: boolean;
-  canChat: boolean;
-  isActivePeer: boolean;
-  isLocalChatLocked: boolean;
-  chatPhase: ChatPhase;
-  onChat: (user: OnlineUser) => void;
-}
-
-const UserCard = memo<UserCardProps>(function UserCard({
-  user,
-  isCurrentUser,
-  canChat,
-  isActivePeer,
-  isLocalChatLocked,
-  chatPhase,
-  onChat,
-}) {
-  const avatar = useMemo(
-    () => getAvatarUrl(user.id, user.name),
-    [user.id, user.name],
-  );
-  const isWaiting = isActivePeer && chatPhase === "awaiting-accept";
-  const isChatting = isActivePeer && chatPhase === "open";
-  const isBusyPhase = isActivePeer && chatPhase === "busy";
-  const isExpired = isActivePeer && chatPhase === "expired";
-  const isTargetBusy = !isCurrentUser && user.isBusy;
-
-  const buttonLabel = isCurrentUser
-    ? "You"
-    : isWaiting
-      ? "Waiting…"
-      : isChatting
-        ? "Chatting"
-        : isBusyPhase || isTargetBusy
-          ? "Busy"
-          : isExpired
-            ? "Timed out"
-            : "Message";
-
-  const buttonDisabled =
-    !canChat ||
-    isCurrentUser ||
-    isTargetBusy ||
-    isBusyPhase ||
-    isWaiting ||
-    isLocalChatLocked;
-
-  const handleChat = useCallback(() => onChat(user), [onChat, user]);
-
-  return (
-    <Card className="group relative w-full overflow-hidden border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md rounded-4xl p-0">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-4">
-          <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
-            <Avatar className="h-12 w-12 ring-2 ring-background">
-              <AvatarImage
-                src={avatar}
-                alt={`${user.name}'s avatar`}
-                className="object-cover"
-              />
-              <AvatarFallback className="bg-muted text-sm font-semibold text-muted-foreground">
-                {getInitials(user.name)}
-              </AvatarFallback>
-            </Avatar>
-
-            <span
-              aria-label={user.isBusy ? "Busy" : "Available"}
-              className={cn(
-                "absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-background",
-                user.isBusy ? "bg-amber-500" : "bg-emerald-500",
-              )}
-            >
-              {!user.isBusy && (
-                <Zap className="h-2.5 w-2.5 text-white" aria-hidden />
-              )}
-            </span>
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-base font-semibold text-foreground">
-                {user.name}
-              </span>
-              {isCurrentUser && (
-                <Shield
-                  className="h-4 w-4 shrink-0 text-primary"
-                  aria-label="You"
-                />
-              )}
-            </div>
-
-            <Badge
-              variant="secondary"
-              className={cn(
-                "h-5 w-fit rounded-md px-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
-                user.isBusy
-                  ? "bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 dark:text-amber-400"
-                  : "bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500/20 dark:text-emerald-400",
-              )}
-            >
-              {user.isBusy ? "Occupied" : "Available"}
-            </Badge>
-          </div>
-        </div>
-
-        <Separator className="my-4 transition-colors group-hover:bg-border/60" />
-
-        <Button
-          type="button"
-          size="sm"
-          variant={isTargetBusy || isCurrentUser ? "secondary" : "default"}
-          disabled={buttonDisabled}
-          onClick={handleChat}
-          className="w-full text-xs font-semibold rounded-xl shadow-none transition-all"
-          aria-label={`${buttonLabel} — ${user.name}`}
-        >
-          <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden />
-          {buttonLabel}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-});
-
-interface StatCardProps {
-  label: string;
-  value: React.ReactNode;
-  icon: React.ReactNode;
-}
-
-function StatCard({ label, value, icon }: StatCardProps) {
-  return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-muted/30 p-3.5 transition-colors hover:bg-muted/50">
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        {icon}
-        {label}
-      </div>
-      <span className="text-2xl font-bold tracking-tight text-foreground">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-65 flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center animate-in fade-in-50 duration-500">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 ring-1 ring-border/50">
-        <UsersRound className="h-6 w-6 text-muted-foreground" aria-hidden />
-      </div>
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-foreground">
-          No users to show
-        </p>
-        <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-          {message}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-interface FilterTabsProps {
-  filters: Array<{ id: PresenceFilter; label: string }>;
-  active: PresenceFilter;
-  onChange: (id: PresenceFilter) => void;
-}
-
-function FilterTabs({ filters, active, onChange }: FilterTabsProps) {
-  return (
-    <Tabs value={active} onValueChange={(v) => onChange(v as PresenceFilter)}>
-      <TabsList className="flex h-auto w-full justify-start gap-2 overflow-x-auto rounded-xl p-1 scrollbar-hide">
-        {filters.map((f) => (
-          <TabsTrigger
-            key={f.id}
-            value={f.id}
-            className={cn(
-              "h-8 shrink-0 rounded-xl border border-border bg-background px-4 text-xs font-semibold transition-all hover:bg-muted hover:text-foreground",
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary/90",
-            )}
-          >
-            {f.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
-  );
-}
+  useOnlinePeopleFilters,
+  type PresenceFilter,
+} from "@/lib/hooks/useOnlinePeopleFilters";
+import UserCard from "./UserCard";
+import StatCard from "./StatCard";
+import EmptyState from "./EmptyState";
+import FilterTabs from "./FilterTabs";
 
 export const OnlinePeoplePage: React.FC = () => {
-  const { users, userCount, currentUserId, status, error, requestChat } =
-    useOnlinePresence();
-  const dispatch = useAppDispatch();
-  const chatPhase = useAppSelector(selectChatPhase);
-  const chatPeer = useAppSelector(selectChatPeer);
-  const isLocalChatLocked = useAppSelector(selectIsLocalChatLocked);
-  const otherUsersCount = useAppSelector(selectOtherUsersCount);
-  const busyUsersCount = useAppSelector(selectBusyUsersCount);
-  const loadedUserCount = useAppSelector(selectLoadedUserCount);
-  const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<PresenceFilter>("all");
-
-  const isConnected = status === "connected";
-
-  const sortedUsers = useMemo(
-    () =>
-      [...users].sort((a, b) => {
-        if (a.id === currentUserId) return -1;
-        if (b.id === currentUserId) return 1;
-        return a.name.localeCompare(b.name);
-      }),
-    [currentUserId, users],
-  );
-
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return sortedUsers.filter((u) => {
-      const matchesFilter =
-        activeFilter === "all" ||
-        (activeFilter === "you" && u.id === currentUserId) ||
-        (activeFilter === "others" && u.id !== currentUserId);
-      if (!matchesFilter) return false;
-      if (!q) return true;
-      return u.name.toLowerCase().includes(q) || u.id.toLowerCase().includes(q);
-    });
-  }, [activeFilter, currentUserId, search, sortedUsers]);
-
-  const handleChat = useCallback(
-    (user: OnlineUser) => {
-      if (
-        !isConnected ||
-        isLocalChatLocked ||
-        user.id === currentUserId ||
-        user.isBusy
-      )
-        return;
-      if (requestChat(user.id)) {
-        dispatch(chatRequested(user));
-      }
-    },
-    [currentUserId, dispatch, isConnected, isLocalChatLocked, requestChat],
-  );
+  const {
+    userCount,
+    currentUserId,
+    status,
+    error,
+    chatPhase,
+    chatPeer,
+    isLocalChatLocked,
+    otherUsersCount,
+    busyUsersCount,
+    loadedUserCount,
+    search,
+    setSearch,
+    activeFilter,
+    setActiveFilter,
+    filteredUsers,
+    isConnected,
+    handleChat,
+  } = useOnlinePeopleFilters();
 
   const filters: Array<{ id: PresenceFilter; label: string }> = [
     { id: "all", label: `Loaded (${loadedUserCount})` },
@@ -334,7 +60,6 @@ export const OnlinePeoplePage: React.FC = () => {
                     "relative inline-flex h-2.5 w-2.5 rounded-full",
                     isConnected ? "bg-emerald-500" : "bg-amber-500",
                   )}
-                  aria-hidden
                 />
               </span>
               <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -379,7 +104,7 @@ export const OnlinePeoplePage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or ID…"
-            className="pl-9 h-10 rounded-xl bg-muted/40 border-border"
+            className="pl-9 h-10 rounded-xl bg-muted/40 border-none "
           />
         </div>
 

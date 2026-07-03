@@ -1,38 +1,15 @@
 "use client";
 
-import React, { memo, useCallback } from "react";
+import React, { memo } from "react";
 import { Phone, User, X } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  chatClosed,
-  chatRequested,
-  selectChatPeer,
-  selectChatPhase,
-} from "@/lib/redux/slices/chatSlice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useOnlinePresenceActions } from "./OnlinePresenceProvider";
+import { useChatInvite } from "@/lib/hooks/useChatInvite";
 
 const ChatInvitePopup: React.FC = memo(() => {
-  const dispatch = useAppDispatch();
-  const phase = useAppSelector(selectChatPhase);
-  const peer = useAppSelector(selectChatPeer);
-  const { acceptChat, rejectChat } = useOnlinePresenceActions();
-
-  const handleAccept = useCallback(() => {
-    if (!peer) return;
-    const sent = acceptChat(peer.id);
-    if (!sent) return;
-    dispatch(chatRequested(peer));
-  }, [acceptChat, dispatch, peer]);
-
-  const handleReject = useCallback(() => {
-    if (!peer) return;
-    rejectChat(peer.id);
-    dispatch(chatClosed());
-  }, [dispatch, peer, rejectChat]);
+  const { phase, peer, handleAccept, handleReject } = useChatInvite();
 
   if (phase !== "incoming-invite" || !peer) return null;
 
