@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { createContext, useCallback, useContext, useMemo } from "react";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import {
   selectCurrentUserId,
   selectOnlineUsers,
@@ -10,19 +10,13 @@ import {
   selectUserCount,
   type OnlineUser,
   type PresenceStatus,
-} from "@/lib/redux/slices/presenceSlice";
-import {
-  matchmakeCancelled,
-  matchmakeStarted,
-} from "@/lib/redux/slices/matchmakingSlice";
-import { messageReceived } from "@/lib/redux/slices/chatSlice";
-import { createClientMessageId } from "@/lib/utils/presenceUtils";
-import { usePresenceConnection } from "@/lib/hooks/usePresenceConnection";
+} from '@/lib/redux/slices/presenceSlice';
+import { matchmakeCancelled, matchmakeStarted } from '@/lib/redux/slices/matchmakingSlice';
+import { messageReceived } from '@/lib/redux/slices/chatSlice';
+import { createClientMessageId } from '@/lib/utils/presenceUtils';
+import { usePresenceConnection } from '@/lib/hooks/usePresenceConnection';
 
-export type {
-  OnlineUser,
-  PresenceStatus,
-} from "@/lib/redux/slices/presenceSlice";
+export type { OnlineUser, PresenceStatus } from '@/lib/redux/slices/presenceSlice';
 
 interface OnlinePresenceActions {
   requestChat: (targetId: string) => boolean;
@@ -43,14 +37,9 @@ interface OnlinePresenceContextValue extends OnlinePresenceActions {
   error: string | null;
 }
 
-const OnlinePresenceActionsContext =
-  createContext<OnlinePresenceActions | null>(null);
+const OnlinePresenceActionsContext = createContext<OnlinePresenceActions | null>(null);
 
-export function OnlinePresenceProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const { socketRef, identity } = usePresenceConnection();
 
@@ -60,23 +49,20 @@ export function OnlinePresenceProvider({
       socketRef.current.send(JSON.stringify(payload));
       return true;
     },
-    [socketRef],
+    [socketRef]
   );
 
   const requestChat = useCallback(
-    (targetId: string) => send({ type: "chat_request", targetId }),
-    [send],
+    (targetId: string) => send({ type: 'chat_request', targetId }),
+    [send]
   );
 
   const acceptChat = useCallback(
-    (fromId: string) => send({ type: "accept_chat", targetId: fromId }),
-    [send],
+    (fromId: string) => send({ type: 'accept_chat', targetId: fromId }),
+    [send]
   );
 
-  const rejectChat = useCallback(
-    (fromId: string) => send({ type: "reject_chat", fromId }),
-    [send],
-  );
+  const rejectChat = useCallback((fromId: string) => send({ type: 'reject_chat', fromId }), [send]);
 
   const sendMessage = useCallback(
     (channel: string, text: string) => {
@@ -84,7 +70,7 @@ export function OnlinePresenceProvider({
 
       const ts = Date.now();
       const id = createClientMessageId(identity.id, ts);
-      const ok = send({ type: "chat_message", channel, text, clientId: id });
+      const ok = send({ type: 'chat_message', channel, text, clientId: id });
       if (!ok) return false;
 
       dispatch(
@@ -94,32 +80,28 @@ export function OnlinePresenceProvider({
           fromId: identity.id,
           text,
           ts,
-        }),
+        })
       );
       return true;
     },
-    [dispatch, identity, send],
+    [dispatch, identity, send]
   );
 
   const sendTypingStatus = useCallback(
-    (channel: string, isTyping: boolean) =>
-      send({ type: "chat_typing", channel, isTyping }),
-    [send],
+    (channel: string, isTyping: boolean) => send({ type: 'chat_typing', channel, isTyping }),
+    [send]
   );
 
-  const endChat = useCallback(
-    (channel: string) => send({ type: "end_chat", channel }),
-    [send],
-  );
+  const endChat = useCallback((channel: string) => send({ type: 'end_chat', channel }), [send]);
 
   const startMatchmaking = useCallback(() => {
-    const ok = send({ type: "matchmake_join" });
+    const ok = send({ type: 'matchmake_join' });
     if (ok) dispatch(matchmakeStarted());
     return ok;
   }, [send, dispatch]);
 
   const cancelMatchmaking = useCallback(() => {
-    const ok = send({ type: "matchmake_leave" });
+    const ok = send({ type: 'matchmake_leave' });
     if (ok) dispatch(matchmakeCancelled());
     return ok;
   }, [send, dispatch]);
@@ -144,7 +126,7 @@ export function OnlinePresenceProvider({
       sendMessage,
       sendTypingStatus,
       startMatchmaking,
-    ],
+    ]
   );
 
   return (
@@ -157,9 +139,7 @@ export function OnlinePresenceProvider({
 export function useOnlinePresenceActions() {
   const context = useContext(OnlinePresenceActionsContext);
   if (!context) {
-    throw new Error(
-      "useOnlinePresenceActions must be used within OnlinePresenceProvider",
-    );
+    throw new Error('useOnlinePresenceActions must be used within OnlinePresenceProvider');
   }
   return context;
 }
@@ -181,6 +161,6 @@ export function useOnlinePresence(): OnlinePresenceContextValue {
       error,
       ...actions,
     }),
-    [actions, currentUserId, error, status, userCount, users],
+    [actions, currentUserId, error, status, userCount, users]
   );
 }

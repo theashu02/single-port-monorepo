@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Sparkles, Search } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Sparkles, Search } from 'lucide-react';
 
 interface IdleViewProps {
   onStart: () => void;

@@ -1,7 +1,7 @@
-import dynamic from "next/dynamic";
-import Loader from "@/components/ui/Loader";
+import dynamic from 'next/dynamic';
+import Loader from '@/components/ui/Loader';
 
-const DiscoverPage = dynamic(() => import("../components/DiscoverPage"), {
+const DiscoverPage = dynamic(() => import('../components/DiscoverPage'), {
   loading: () => <Loader />,
 });
 

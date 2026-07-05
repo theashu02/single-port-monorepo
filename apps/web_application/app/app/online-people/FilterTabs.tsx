@@ -1,4 +1,3 @@
-import React from "react";
 import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { type PresenceFilter } from "@/lib/hooks/useOnlinePeopleFilters";

@@ -1,7 +1,7 @@
-import dynamic from "next/dynamic";
-import Loader from "@/components/ui/Loader";
+import dynamic from 'next/dynamic';
+import Loader from '@/components/ui/Loader';
 
-const OnlinePeoplePage = dynamic(() => import("./OnlinePeoplePage"), {
+const OnlinePeoplePage = dynamic(() => import('./OnlinePeoplePage'), {
   loading: () => <Loader />,
 });
 

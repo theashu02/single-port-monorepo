@@ -1,20 +1,17 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Search, UsersRound, Wifi, WifiOff } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Search, UsersRound, Wifi, WifiOff } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
-import { getStatusMessage } from "@/lib/utils/presenceUtils";
-import {
-  useOnlinePeopleFilters,
-  type PresenceFilter,
-} from "@/lib/hooks/useOnlinePeopleFilters";
-import UserCard from "./UserCard";
-import StatCard from "./StatCard";
-import EmptyState from "./EmptyState";
-import FilterTabs from "./FilterTabs";
+import { getStatusMessage } from '@/lib/utils/presenceUtils';
+import { useOnlinePeopleFilters, type PresenceFilter } from '@/lib/hooks/useOnlinePeopleFilters';
+import UserCard from './UserCard';
+import StatCard from './StatCard';
+import EmptyState from './EmptyState';
+import FilterTabs from './FilterTabs';
 
 export const OnlinePeoplePage: React.FC = () => {
   const {
@@ -38,9 +35,9 @@ export const OnlinePeoplePage: React.FC = () => {
   } = useOnlinePeopleFilters();
 
   const filters: Array<{ id: PresenceFilter; label: string }> = [
-    { id: "all", label: `Loaded (${loadedUserCount})` },
-    { id: "others", label: `Others (${otherUsersCount})` },
-    { id: "you", label: "You" },
+    { id: 'all', label: `Loaded (${loadedUserCount})` },
+    { id: 'others', label: `Others (${otherUsersCount})` },
+    { id: 'you', label: 'You' },
   ];
 
   const statusMsg = getStatusMessage(status, error);
@@ -57,22 +54,21 @@ export const OnlinePeoplePage: React.FC = () => {
                 )}
                 <span
                   className={cn(
-                    "relative inline-flex h-2.5 w-2.5 rounded-full",
-                    isConnected ? "bg-emerald-500" : "bg-amber-500",
+                    'relative inline-flex h-2.5 w-2.5 rounded-full',
+                    isConnected ? 'bg-emerald-500' : 'bg-amber-500'
                   )}
                 />
               </span>
               <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                {isConnected ? "Live Presence" : "Connecting"}
+                {isConnected ? 'Live Presence' : 'Connecting'}
               </span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-              <span className="text-primary">{userCount}</span>{" "}
-              {userCount === 1 ? "User" : "Users"} Online
+              <span className="text-primary">{userCount}</span> {userCount === 1 ? 'User' : 'Users'}{' '}
+              Online
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {statusMsg} Showing {loadedUserCount} active profiles to keep the
-              realtime view fast.
+              {statusMsg} Showing {loadedUserCount} active profiles to keep the realtime view fast.
             </p>
           </div>
 
@@ -108,18 +104,12 @@ export const OnlinePeoplePage: React.FC = () => {
           />
         </div>
 
-        <FilterTabs
-          filters={filters}
-          active={activeFilter}
-          onChange={setActiveFilter}
-        />
+        <FilterTabs filters={filters} active={activeFilter} onChange={setActiveFilter} />
       </div>
 
       <ScrollArea className="min-h-0 flex-1 px-1">
         {filteredUsers.length === 0 ? (
-          <EmptyState
-            message={search ? `No results found for "${search}"` : statusMsg}
-          />
+          <EmptyState message={search ? `No results found for "${search}"` : statusMsg} />
         ) : (
           <div className="grid grid-cols-1 gap-4 pb-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredUsers.map((user) => (

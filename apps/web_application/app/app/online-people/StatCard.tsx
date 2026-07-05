@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 interface StatCardProps {
   label: string;
@@ -13,9 +13,7 @@ function StatCard({ label, value, icon }: StatCardProps) {
         {icon}
         {label}
       </div>
-      <span className="text-2xl font-bold tracking-tight text-foreground">
-        {value}
-      </span>
+      <span className="text-2xl font-bold tracking-tight text-foreground">{value}</span>
     </div>
   );
 }

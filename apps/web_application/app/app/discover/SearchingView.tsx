@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { RefreshCw, X } from "lucide-react";
-import { formatElapsed } from "@/lib/utils/formatElapsed";
-import { Button } from "@/components/ui/button";
+import { RefreshCw, X } from 'lucide-react';
+import { formatElapsed } from '@/lib/utils/formatElapsed';
+import { Button } from '@/components/ui/button';
 
 interface SearchingViewProps {
   onCancel: () => void;
@@ -10,30 +10,26 @@ interface SearchingViewProps {
   queuePosition: number | null;
 }
 
-export default function SearchingView({
-  onCancel,
-  elapsed,
-  queuePosition,
-}: SearchingViewProps) {
+export default function SearchingView({ onCancel, elapsed, queuePosition }: SearchingViewProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 px-6 text-center">
       <div className="relative flex items-center justify-center">
         <div
           className="absolute h-40 w-40 animate-ping rounded-full border border-violet-500/30"
-          style={{ animationDuration: "2s" }}
+          style={{ animationDuration: '2s' }}
         />
         <div
           className="absolute h-32 w-32 animate-ping rounded-full border border-fuchsia-500/20"
-          style={{ animationDuration: "2.5s" }}
+          style={{ animationDuration: '2.5s' }}
         />
         <div
           className="absolute h-24 w-24 animate-ping rounded-full border border-cyan-400/20"
-          style={{ animationDuration: "3s" }}
+          style={{ animationDuration: '3s' }}
         />
         <div className="relative grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
           <RefreshCw
             className="h-8 w-8 animate-spin text-violet-400"
-            style={{ animationDuration: "3s" }}
+            style={{ animationDuration: '3s' }}
           />
         </div>
       </div>
@@ -55,9 +51,7 @@ export default function SearchingView({
         </div>
         {queuePosition !== null && (
           <div className="rounded-full border border-violet-400/20 bg-violet-500/10 px-4 py-2">
-            <span className="text-sm font-medium text-violet-300">
-              #{queuePosition} in queue
-            </span>
+            <span className="text-sm font-medium text-violet-300">#{queuePosition} in queue</span>
           </div>
         )}
       </div>

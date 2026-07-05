@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { X, MessageCircle, ArrowUp } from "lucide-react";
-import { useDiscoverChat } from "@/lib/hooks";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import MessageRow from "../online-people/MessageRow";
+import { X, MessageCircle, ArrowUp } from 'lucide-react';
+import { useDiscoverChat } from '@/lib/hooks';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import MessageRow from '../online-people/MessageRow';
 
 interface ChatUser {
   id: string;
@@ -19,11 +19,7 @@ interface DiscoverChatViewProps {
   currentUserId: string | null;
 }
 
-export default function DiscoverChatView({
-  peer,
-  channel,
-  currentUserId,
-}: DiscoverChatViewProps) {
+export default function DiscoverChatView({ peer, channel, currentUserId }: DiscoverChatViewProps) {
   const {
     messages,
     isPeerTyping,
@@ -50,13 +46,11 @@ export default function DiscoverChatView({
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-tight">
-              {peer.name}
-            </span>
+            <span className="text-sm font-semibold tracking-tight">{peer.name}</span>
             <span
-              className={`text-xs ${isPeerTyping ? "text-primary animate-pulse font-medium" : "text-muted-foreground"}`}
+              className={`text-xs ${isPeerTyping ? 'text-primary animate-pulse font-medium' : 'text-muted-foreground'}`}
             >
-              {isPeerTyping ? "Typing..." : "Connected"}
+              {isPeerTyping ? 'Typing...' : 'Connected'}
             </span>
           </div>
         </div>
@@ -89,9 +83,7 @@ export default function DiscoverChatView({
               <MessageRow
                 key={msg.id}
                 msg={msg}
-                isMine={
-                  msg.fromId !== "__system__" && msg.fromId === currentUserId
-                }
+                isMine={msg.fromId !== '__system__' && msg.fromId === currentUserId}
               />
             ))
           )}
