@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server@latest"
+      ],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb+srv://ashu:ashu0512@cluster0.maqn5mo.mongodb.net/simpl_reachout?appName=Cluster0",
+        "MDB_MCP_READ_ONLY": "false"
+      }
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "shadcn@latest",
+        "mcp"
+      ]
+    },
+    "envoy-gateway": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@saptak/egmcp-server"
+      ],
+      "env": {
+        "ENVOY_URL": "http://localhost:19000"
+      }
+    }
+  }
+}
