@@ -1,13 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { usePathname } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import {
   chatClosed,
   selectChannelMessages,
@@ -15,9 +8,9 @@ import {
   selectChatPeer,
   selectChatPhase,
   selectIsPeerTyping,
-} from "@/lib/redux/slices/chatSlice";
-import { selectCurrentUserId } from "@/lib/redux/slices/presenceSlice";
-import { useOnlinePresenceActions } from "@/app/app/online-people/OnlinePresenceProvider";
+} from '@/lib/redux/slices/chatSlice';
+import { selectCurrentUserId } from '@/lib/redux/slices/presenceSlice';
+import { useOnlinePresenceActions } from '@/app/app/online-people/OnlinePresenceProvider';
 
 const TYPING_IDLE_MS = 1000;
 
@@ -30,13 +23,13 @@ export function useChatWindowLogic() {
   const messages = useAppSelector(selectChannelMessages(channel));
   const selectPeerTyping = useMemo(
     () => selectIsPeerTyping(channel, peer?.id),
-    [channel, peer?.id],
+    [channel, peer?.id]
   );
   const isPeerTyping = useAppSelector(selectPeerTyping);
   const currentUserId = useAppSelector(selectCurrentUserId);
   const { sendMessage, sendTypingStatus, endChat } = useOnlinePresenceActions();
 
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeChannelRef = useRef<string | null>(null);
   const closeSentRef = useRef(false);
@@ -68,44 +61,42 @@ export function useChatWindowLogic() {
       }
 
       clearTypingTimer();
-      typingIdleTimerRef.current = window.setTimeout(
-        stopTyping,
-        TYPING_IDLE_MS,
-      );
+      typingIdleTimerRef.current = window.setTimeout(stopTyping, TYPING_IDLE_MS);
     },
-    [clearTypingTimer, sendTypingStatus, stopTyping],
+    [clearTypingTimer, sendTypingStatus, stopTyping]
   );
 
   useEffect(() => {
-    activeChannelRef.current = phase === "open" ? channel : null;
-    if (phase === "open") closeSentRef.current = false;
-    if (phase !== "open") stopTyping();
-  }, [channel, phase, stopTyping]);
-
-  useEffect(() => {
+    activeChannelRef.current = phase === 'open' ? channel : null;
+    if (phase === 'open') {
+      closeSentRef.current = false;
+    } else {
+      stopTyping();
+    }
     return () => {
       stopTyping();
     };
-  }, [channel, stopTyping]);
+  }, [channel, phase, stopTyping]);
 
   useEffect(() => {
     const endActiveChat = () => {
       stopTyping();
       const activeChannel = activeChannelRef.current;
-      if (!activeChannel || closeSentRef.current) return;
-      closeSentRef.current = true;
-      endChat(activeChannel);
+      if (activeChannel && !closeSentRef.current) {
+        closeSentRef.current = true;
+        endChat(activeChannel);
+      }
     };
 
-    window.addEventListener("pagehide", endActiveChat);
+    window.addEventListener('pagehide', endActiveChat);
     return () => {
       endActiveChat();
-      window.removeEventListener("pagehide", endActiveChat);
+      window.removeEventListener('pagehide', endActiveChat);
     };
   }, [endChat, stopTyping]);
 
   useLayoutEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = useCallback(() => {
@@ -113,7 +104,7 @@ export function useChatWindowLogic() {
     if (!text || !channel) return;
     stopTyping();
     const sent = sendMessage(channel, text);
-    if (sent) setDraft("");
+    if (sent) setDraft('');
   }, [channel, draft, sendMessage, stopTyping]);
 
   const handleDraftChange = useCallback(
@@ -121,24 +112,24 @@ export function useChatWindowLogic() {
       const value = e.target.value;
       setDraft(value);
 
-      if (!channel || phase !== "open") return;
+      if (!channel || phase !== 'open') return;
       if (value.trim()) {
         startTyping(channel);
       } else {
         stopTyping();
       }
     },
-    [channel, phase, startTyping, stopTyping],
+    [channel, phase, startTyping, stopTyping]
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
     },
-    [handleSend],
+    [handleSend]
   );
 
   const handleClose = useCallback(() => {

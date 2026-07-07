@@ -1,6 +1,6 @@
-import { TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { type PresenceFilter } from "@/lib/hooks/useOnlinePeopleFilters";
+import { TabsList, TabsTrigger, Tabs } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { type PresenceFilter } from '@/lib/hooks/useOnlinePeopleFilters';
 
 interface FilterTabsProps {
   filters: Array<{ id: PresenceFilter; label: string }>;
@@ -11,14 +11,14 @@ interface FilterTabsProps {
 function FilterTabs({ filters, active, onChange }: FilterTabsProps) {
   return (
     <Tabs value={active} onValueChange={(v) => onChange(v as PresenceFilter)}>
-      <TabsList className="flex h-auto w-full justify-start gap-2 overflow-x-auto rounded-xl p-1 scrollbar-hide">
+      <TabsList className="flex h-11 w-full sm:w-auto items-center justify-start gap-1 rounded-2xl border border-border/30 bg-muted/30 p-1 scrollbar-hide">
         {filters.map((f) => (
           <TabsTrigger
             key={f.id}
             value={f.id}
             className={cn(
-              "h-8 shrink-0 rounded-xl border border-border bg-background px-4 text-xs font-semibold transition-all hover:bg-muted hover:text-foreground",
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary/90",
+              'h-8.5 shrink-0 rounded-xl px-4 text-[10px] font-extrabold uppercase tracking-wider transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-background/20',
+              'data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:border-border/40 border border-transparent'
             )}
           >
             {f.label}
