@@ -12,12 +12,8 @@ export default function IdleView({ onStart, onlineCount }: IdleViewProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 px-6 text-center">
       <div className="relative">
-        <div className="absolute inset-0 h-32 w-32 animate-pulse rounded-full bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-cyan-400/30 blur-2xl" />
-        <div className="relative grid h-32 w-32 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-violet-500/10 to-cyan-400/10">
-          <Sparkles className="h-12 w-12 text-violet-400" />
-        </div>
+        <Sparkles className="h-32 w-32 text-violet-400" />
       </div>
-
       <div>
         <h2 className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-3xl font-black tracking-tight text-transparent">
           Discover Someone New

@@ -57,15 +57,6 @@ export default function DiscoverPage() {
             : "rounded-2xl border border-white/10 glass grid-bg"
         }`}
       >
-        {/* Background orbs - Hidden during chat so we get a clean minimalist chat view */}
-        {!isInChat && (
-          <>
-            <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-violet-600/30 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl" />
-            <div className="pointer-events-none absolute left-1/2 top-1/3 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
-          </>
-        )}
-
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center">
           {isInChat && chatPeer && chatChannel ? (
             <DiscoverChatView
